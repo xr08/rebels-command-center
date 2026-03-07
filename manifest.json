@@ -1,0 +1,21 @@
+{
+  "name": "Rebels Command Center",
+  "short_name": "Rebels CC",
+  "description": "Live Stream Command Center for Fremantle Rebels Softball Club volunteers.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#044229",
+  "theme_color": "#044229",
+  "icons": [
+    {
+      "src": "./assets/rebels-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./assets/rebels-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
