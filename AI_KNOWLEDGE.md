@@ -14,7 +14,7 @@ The Nearstream VM33 battery might be dead, or it disconnected from the Camera Ne
 
 ## I cant log into the streaming software
 
-The global organization email is fremantlerebels@gmail.com and the universal password available in the .env file. This single, centralized login applies to all of our core broadcasting services, including Sideline Pro (for the scoreboard overlays and stream routing), Mevo Pro, and NearStream accounts (for camera control). Having a universal login ensures that any volunteer can step in and run the broadcast without being locked out.
+The global organization email is <CLUB_EMAIL> and the universal password available in the .env file. This single, centralized login applies to all of our core broadcasting services, including Sideline Pro (for the scoreboard overlays and stream routing), Mevo Pro, and NearStream accounts (for camera control). Having a universal login ensures that any volunteer can step in and run the broadcast without being locked out.
 
 ## the netgear modem has run out of data
 
@@ -24,17 +24,17 @@ For the internet connection, the cellular service runs on a Nathan Hughes prepai
 
 Because we run a complex multi-router setup, it is critical to use the exact IP addresses assigned to each piece of hardware to prevent the network from crashing. To access the admin portal of any router, connect your device to its Wi-Fi network and type the IP address directly into a web browser (like Safari or Chrome).
 
-For the Dugout Hub (GL.iNet Slate 7 GL-BE3600): The IP Address is 192.168.8.2. The Admin Portal Password is GL-BE3600-cfd. The Wi-Fi SSID (Network Name) is GL-BE3600-cfd, and the Wi-Fi Password is JK64ZKJPET. Hardware details: MAC 94:83:C4:AF:DC:FD, S/N c7471f6734a54c2e, Device ID sifdcfd. This router acts as the brain of the operation, connecting directly to the 5G modem.
+For the Dugout Hub (GL.iNet Slate 7 GL-BE3600): The IP Address is <ROUTER2_IP>. The Admin Portal Password is <ROUTER2_ADMIN>. The Wi-Fi SSID (Network Name) is <ROUTER2_SSID>, and the Wi-Fi Password is <ROUTER2_WIFI>. Hardware details: MAC <MAC>, S/N <SN>, Device ID <ID>. This router acts as the brain of the operation, connecting directly to the 5G modem.
 
-For the Centerfield Bridge (GL.iNet Slate AX GL-AXT1800): The IP Address is 192.168.8.1. The Admin Portal Password is GL-AXT1800-f41. The Wi-Fi SSID is GL-AXT1800-f41, and the Wi-Fi Password is 9NK74DR5JN. Hardware details: MAC 94:83:C4:5E:6F:41, S/N 7bb627114cbedf85, Device ID gpe6f41.
+For the Centerfield Bridge (GL.iNet Slate AX GL-AXT1800): The IP Address is <ROUTER1_IP>. The Admin Portal Password is <ROUTER1_ADMIN>. The Wi-Fi SSID is <ROUTER1_SSID>, and the Wi-Fi Password is <ROUTER1_WIFI>. Hardware details: MAC <MAC>, S/N <SN>, Device ID <ID>.
 
-For the NearStream VM33 Camera: The designated IP address on the network is 192.168.8.178. If the NearStream app cannot automatically discover this camera, you can use this specific IP address to manually ping and connect to it over the local network.
+For the NearStream Camera: The designated IP address on the network is <CAM1_IP>. If the NearStream app cannot automatically discover this camera, you can use this specific IP address to manually ping and connect to it over the local network.
 
 ## How do I pull the SidelineHD Stream Keys and start the broadcast?
 
 To start the broadcast, you must pair the camera hardware to the specific digital "destination" for that game.
 
-Log in to your account at sidelineHD.com using the Rebels global credentials (fremantlerebels@gmail.com).
+Log in to your account at sidelineHD.com using the Rebels global credentials (<CLUB_EMAIL>).
 
 On the main dashboard, select the specific Team Card for the team you are streaming today. This is crucial; selecting the wrong team will send the video to the wrong Facebook/YouTube page.
 
@@ -72,11 +72,11 @@ Prior to hitting "Go Live", you must run a speed test (using an app like Speedte
 
 If the 5G network is bouncing wildly and failing completely, log into the Netgear M7 admin panel and manually lock the cellular band to a specific 5G frequency (e.g., n78) or force it down to a highly reliable, slower 4G LTE frequency (e.g., B28) for maximum stability.
 
-## The tablet or phone in the Dugout cannot find the Centerfield NearStream VM46 camera
+## The tablet or phone in the Dugout cannot find the Centerfield NearStream camera
 
 The outfield camera relies on a complex wireless bridge to send data 250+ feet back to the dugout. Because the Slate AX out in centerfield acts as a "WDS Transparent Bridge", it invisibly shares the dugout's network subnet.
 
-If the tablet or phone cannot see the camera, first physically walk out to centerfield and check the power bank. Ensure the Slate AX router and the VM46 camera are both powered on and properly connected via the long Ethernet cable.
+If the tablet or phone cannot see the camera, first physically walk out to centerfield and check the power bank. Ensure the Slate AX router and the camera are both powered on and properly connected via the long Ethernet cable.
 
 Second, check your line-of-sight. 5GHz and 2.4GHz Wi-Fi signals cannot penetrate human bodies or dense metal effectively. Ensure the Slate AX router (housed inside the Toolpro Safe Case) is mounted high up on the fence, ideally above head height. If walking spectators, warming up players, or thick metal poles block the physical, visual line-of-sight back to the dugout hub, the signal will sever.
 
@@ -92,7 +92,7 @@ Additionally, ensure the Slate 7's 5GHz Wi-Fi is locked to a specific, high-powe
 
 If you are setting up the wireless bridge and the Centerfield router simply cannot find the Dugout router during a Wi-Fi scan, you are experiencing a Wi-Fi 7 to Wi-Fi 6 hardware mismatch. The newer Slate 7 hub is broadcasting a signal too advanced for the older Slate AX to interpret.
 
-To resolve this, log into the Slate 7 (Dugout Hub) admin panel at 192.168.8.2. Navigate to the 2.4 GHz Wi-Fi settings. You must strictly change the Wi-Fi Mode to "11 b/g/n" (Legacy Wi-Fi 4) and keep the bandwidth permanently locked to 20 MHz. This effectively "dumbs down" the wireless signal so the older Slate AX can instantly recognize and bind to it.
+To resolve this, log into the Slate 7 (Dugout Hub) admin panel at <ROUTER2_IP>. Navigate to the 2.4 GHz Wi-Fi settings. You must strictly change the Wi-Fi Mode to "11 b/g/n" (Legacy Wi-Fi 4) and keep the bandwidth permanently locked to 20 MHz. This effectively "dumbs down" the wireless signal so the older Slate AX can instantly recognize and bind to it.
 
 You may also need to change the 2.4 GHz security protocol strictly to WPA2-PSK (avoiding WPA3). For maximum reliability, temporarily append "-2G" to the SSID name (e.g., GL-BE3600-cfd-2G) so the bridge router connects explicitly to the 2.4GHz band and doesn't attempt to blend into the 5GHz band.
 
@@ -124,9 +124,9 @@ For these off-grid locations, you must power the entire broadcast using the prov
 
 ## The two GL.iNet Routers are causing IP Conflicts and taking the network down
 
-Every router comes from the factory programmed to act as the primary gateway, generally using the IP address 192.168.8.1. If both the Dugout Slate 7 and the Centerfield Slate AX are powered on and outputting their default factory IP addresses on the same bridged network, a massive IP conflict will occur, crashing the network and knocking all devices offline.
+Every router comes from the factory programmed to act as the primary gateway, generally using the IP address <ROUTER1_IP>. If both the Dugout Slate 7 and the Centerfield Slate AX are powered on and outputting their default factory IP addresses on the same bridged network, a massive IP conflict will occur, crashing the network and knocking all devices offline.
 
-To prevent this, we have permanently modified the Dugout Hub. Ensure the Dugout Hub (Slate 7) remains permanently assigned to the IP address 192.168.8.2 (accessible via Admin PW GL-BE3600-cfd). This intentionally moves it out of the way, avoiding fights with the Centerfield bridge (Slate AX), which should safely remain on the default 192.168.8.1. If someone has factory-reset the Slate 7, you must manually log in and change its LAN IP back to 192.168.8.2 before attempting to connect the centerfield bridge.
+To prevent this, we have permanently modified the Dugout Hub. Ensure the Dugout Hub (Slate 7) remains permanently assigned to the IP address <ROUTER2_IP> (accessible via Admin PW <ROUTER2_ADMIN>). This intentionally moves it out of the way, avoiding fights with the Centerfield bridge (Slate AX), which should safely remain on the default <ROUTER1_IP>. If someone has factory-reset the Slate 7, you must manually log in and change its LAN IP back to <ROUTER2_IP> before attempting to connect the centerfield bridge.
 
 ## Wind noise is overpowering the umpire's calls and game audio
 

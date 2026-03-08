@@ -1,7 +1,7 @@
 {
   "organization": {
     "name": "Fremantle Rebels",
-    "global_email": "fremantlerebels@gmail.com"
+    "global_email": "<CLUB_EMAIL>"
   },
   "venues": [
     {
@@ -158,47 +158,47 @@
   "equipment_inventory": [
     {
       "brand": "GL-INET",
-      "model": "GL-AXT1800",
+      "model": "<ROUTER1_MODEL>",
       "description": "Slate AX Wi-Fi 6 Router",
-      "mac_address": "94:83:C4:5E:6F:41",
-      "serial_number": "7bb627114cbedf85",
-      "device_id": "gpe6f41"
+      "mac_address": "<ROUTER1_MAC>",
+      "serial_number": "<ROUTER1_SN>",
+      "device_id": "<ROUTER1_ID>"
     },
     {
       "brand": "GL-INET",
-      "model": "GL-BE3600",
+      "model": "<ROUTER2_MODEL>",
       "description": "Slate 7 Dual-band Wi-Fi 7 Router",
-      "mac_address": "94:83:C4:AF:DC:FD",
-      "serial_number": "c7471f6734a54c2e",
-      "device_id": "sifdcfd"
+      "mac_address": "<ROUTER2_MAC>",
+      "serial_number": "<ROUTER2_SN>",
+      "device_id": "<ROUTER2_ID>"
     },
     {
       "brand": "NEARSTREAM",
-      "model": "VM33",
+      "model": "<CAM1_MODEL>",
       "description": "2k camera",
-      "mac_address": "F5:AB:9A:8F:26:75",
-      "serial_number": "00A73"
+      "mac_address": "<CAM1_MAC>",
+      "serial_number": "<CAM1_SN>"
     },
     {
       "brand": "NEARSTREAM",
-      "model": "VM46",
+      "model": "<CAM2_MODEL>",
       "description": "4k camera",
-      "mac_address": "F5:AC:8C:AA:09:09",
-      "serial_number": "0038D"
+      "mac_address": "<CAM2_MAC>",
+      "serial_number": "<CAM2_SN>"
     },
     {
       "brand": "NEARSTREAM",
-      "model": "VM46NEW",
+      "model": "<CAM3_MODEL>",
       "description": "4k camera",
-      "mac_address": "F5:AC:8C:AA:10:03",
-      "serial_number": "003EB"
+      "mac_address": "<CAM3_MAC>",
+      "serial_number": "<CAM3_SN>"
     },
     {
       "brand": "NETGEAR",
-      "model": "M7 Ultra",
+      "model": "<MODEM_MODEL>",
       "description": "Nighthawk 5g Modem",
-      "mac_address": "34-98-B5-89-C6-3C",
-      "imei": "355058630142825"
+      "mac_address": "<MODEM_MAC>",
+      "imei": "<MODEM_IMEI>"
     },
     {
       "brand": "NETGEAR",

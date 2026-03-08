@@ -42,7 +42,7 @@ Primary: "Join the Rebels Family" or "See you at the Diamond."
 
 Secondary: Direct users to our official channels:
 
-Email: fremantlerebels@gmail.com.au
+Email: fremantlerebels [at] gmail.com.au
 
 Contact: Bruce Johnson (Sponsorship Coordinator) at 0419481915.
 

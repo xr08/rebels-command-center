@@ -189,9 +189,9 @@ const TechnicalVault = () => {
                         <Icon name="Camera" className="card-icon" />
                         <h3 className="card-title">Camera Network</h3>
                     </div>
-                    <CredentialRow label="Nearstream VM33 IP" value={envData.VITE_CAM1_IP} id="vm33_ip" isPassword={false} />
-                    <CredentialRow label="Nearstream VM46 (1) IP" value={envData.VITE_CAM2_IP} id="vm46_ip" isPassword={false} />
-                    <CredentialRow label="Nearstream VM46 (2) IP" value={envData.VITE_CAM3_IP} id="vm46new_ip" isPassword={false} />
+                    <CredentialRow label="Nearstream Cam 1 IP" value={envData.VITE_CAM1_IP} id="vm33_ip" isPassword={false} />
+                    <CredentialRow label="Nearstream Cam 2 IP" value={envData.VITE_CAM2_IP} id="vm46_ip" isPassword={false} />
+                    <CredentialRow label="Nearstream Cam 3 IP" value={envData.VITE_CAM3_IP} id="vm46new_ip" isPassword={false} />
                 </div>
 
                 <div className="card">
@@ -1054,7 +1054,7 @@ function App() {
                 <div className="sidebar-footer">
                     <button className="btn btn-primary">Join the Rebels Family</button>
                     <div className="form-label" style={{ textAlign: 'center', fontSize: '0.7rem', marginTop: '0.5rem' }}>
-                        fremantlerebels@gmail.com.au
+                        fremantlerebels [at] gmail.com.au
                     </div>
                 </div>
             </aside>
