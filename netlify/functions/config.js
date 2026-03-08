@@ -5,7 +5,7 @@ exports.handler = async function (event, context) {
 
     try {
         const { password } = JSON.parse(event.body);
-        const masterPassword = process.env.VITE_VAULT_PASSWORD;
+        const masterPassword = process.env.VITE_VAULT_PASSWORD || process.env.VITE_CLUB_PASSWORD;
 
         if (!masterPassword) {
             return {
