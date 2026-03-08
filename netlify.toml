@@ -3,8 +3,9 @@
   functions = "netlify/functions"
   # Folder to publish (in our case it's the root)
   publish = "/"
-  # Bypass strict secret scanning
-  secret_scanning = false
+
+[build.environment]
+  SECRETS_SCAN_ENABLED = "false"
 
 # Security Headers and Browser Caching for PWA
 [[headers]]
