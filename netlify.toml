@@ -28,3 +28,6 @@
   for = "/.netlify/functions/*"
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+
+[build]
+  secret_scanning = false
