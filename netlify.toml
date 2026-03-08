@@ -3,6 +3,8 @@
   functions = "netlify/functions"
   # Folder to publish (in our case it's the root)
   publish = "/"
+  # Bypass strict secret scanning
+  secret_scanning = false
 
 # Security Headers and Browser Caching for PWA
 [[headers]]
@@ -28,6 +30,3 @@
   for = "/.netlify/functions/*"
   [headers.values]
     Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
-
-[build]
-  secret_scanning = false
