@@ -653,11 +653,52 @@ const StreamPlanning = () => {
 
 const AnalyticsPostGame = () => {
     const [status, setStatus] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formData, setFormData] = useState({
+        game_date_opponent: '',
+        peak_viewers: '',
+        total_views: '',
+        lessons_learned: ''
+    });
 
-    const handleSubmit = (e) => {
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setStatus('Report submitted successfully to the club committee!');
-        setTimeout(() => setStatus(''), 3000);
+        setIsSubmitting(true);
+        setStatus('');
+
+        try {
+            const response = await fetch('/.netlify/functions/google-sheet-write', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                setStatus('Report submitted successfully to the club committee!');
+                setFormData({ // Reset form
+                    game_date_opponent: '',
+                    peak_viewers: '',
+                    total_views: '',
+                    lessons_learned: ''
+                });
+            } else {
+                const errorData = await response.json();
+                setStatus(`Submission failed: ${errorData.error || 'Please try again.'}`);
+            }
+        } catch (error) {
+            console.error('Submission error:', error);
+            setStatus('Submission failed: Network error.');
+        } finally {
+            setIsSubmitting(false);
+            setTimeout(() => setStatus(''), 5000);
+        }
     };
 
     return (
@@ -673,27 +714,29 @@ const AnalyticsPostGame = () => {
                     <div className="grid grid-2">
                         <div className="form-group">
                             <label className="form-label">Game Date / Opponent</label>
-                            <input type="text" className="form-input" placeholder="e.g. 24 Oct vs. Redbacks" required />
+                            <input name="game_date_opponent" value={formData.game_date_opponent} onChange={handleInputChange} type="text" className="form-input" placeholder="e.g. 24 Oct vs. Redbacks" required />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Peak Concurrent Viewers</label>
-                            <input type="number" className="form-input" placeholder="e.g. 150" required />
+                            <input name="peak_viewers" value={formData.peak_viewers} onChange={handleInputChange} type="number" className="form-input" placeholder="e.g. 150" required />
                         </div>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">Total Views (End of Broadcast)</label>
-                        <input type="number" className="form-input" placeholder="e.g. 1200" />
+                        <input name="total_views" value={formData.total_views} onChange={handleInputChange} type="number" className="form-input" placeholder="e.g. 1200" />
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">Technical Issues & Lessons Learned</label>
-                        <textarea className="form-input" rows="4" placeholder="e.g. The Wi-Fi dropped in the 3rd inning due to crowds. Next time we will exclusively use the Telstra 5G hotspot." required></textarea>
+                        <textarea name="lessons_learned" value={formData.lessons_learned} onChange={handleInputChange} className="form-input" rows="4" placeholder="e.g. The Wi-Fi dropped in the 3rd inning due to crowds. Next time we will exclusively use the Telstra 5G hotspot." required></textarea>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button type="submit" className="btn btn-primary">Submit Report</button>
-                        {status && <span style={{ color: '#4ade80', fontSize: '0.875rem', fontWeight: '500' }}>{status}</span>}
+                        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                            {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                        </button>
+                        {status && <span style={{ color: status.includes('failed') ? 'red' : '#4ade80', fontSize: '0.875rem', fontWeight: '500' }}>{status}</span>}
                     </div>
                 </form>
             </div>
