@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { SocialPreview } from "@/components/social/preview/social-preview";
@@ -34,6 +35,7 @@ type Props = {
 };
 
 type ComposeMode = "single" | "summary";
+type WorkflowMode = "quick" | "full";
 
 const streamOptions: { label: string; value: Stream }[] = [
   { label: "All", value: "all" },
@@ -95,7 +97,15 @@ function toTemplateData(fixture: FixtureRecord | null): TemplateFixtureProps | n
   };
 }
 
+function getExportSize(aspectRatio: TemplateOptions["aspectRatio"]) {
+  if (aspectRatio === "portrait") {
+    return { width: 1080, height: 1350 };
+  }
+  return { width: 1080, height: 1080 };
+}
+
 export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, brand }: Props) {
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
   const [viewMode, setViewMode] = useState<"upcoming" | "results">("upcoming");
   const [stream, setStream] = useState<Stream>("all");
@@ -135,6 +145,14 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       setPostType("preview");
     }
   }, [initialDraft]);
+
+  useEffect(() => {
+    if (workflowMode === "quick") {
+      setComposeMode("single");
+      setShowSponsorStrip(false);
+      setShowLogo(true);
+    }
+  }, [workflowMode]);
 
   const filteredFixtures = useMemo(() => {
     return fixtures.filter((fixture) => {
@@ -210,6 +228,12 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     }
   }, [availableTemplates, templateId]);
 
+  useEffect(() => {
+    if (!mediaOptions.some((asset) => asset.id === backgroundAssetId)) {
+      setBackgroundAssetId("");
+    }
+  }, [mediaOptions, backgroundAssetId]);
+
   const selectedFixture = filteredFixtures.find((fixture) => fixture.id === fixtureId) ?? null;
   const selectedTemplate = availableTemplates.find((template) => template.id === templateId) ?? null;
   const singleData = toTemplateData(selectedFixture);
@@ -263,16 +287,25 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       return;
     }
 
+    const { width, height } = getExportSize(templateOptions.aspectRatio);
     const dataUrl = await toPng(previewRef.current, {
       cacheBust: true,
-      pixelRatio: 2
+      pixelRatio: 2,
+      width,
+      height,
+      canvasWidth: width,
+      canvasHeight: height,
+      style: {
+        width: `${width}px`,
+        height: `${height}px`
+      }
     });
 
     const fileLabel = composeMode === "summary" ? roundLabel || "round" : selectedFixture?.round_label || "fixture";
     const link = document.createElement("a");
-    link.download = `${fileLabel}-${selectedTemplate.component_key}-${templateOptions.aspectRatio}.png`
+    link.download = `${fileLabel}-${selectedTemplate.component_key}-${templateOptions.aspectRatio}`
       .toLowerCase()
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-") + ".png";
     link.href = dataUrl;
     link.click();
     setMessage("PNG exported.");
@@ -288,42 +321,76 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       return;
     }
 
+    const captionToSave = caption || (composeMode === "summary"
+      ? selectedTemplate.post_type === "result_summary"
+        ? buildResultSummaryCaption(roundLabel, brand.clubName, stream, summaryFixtures.length)
+        : buildPreviewSummaryCaption(roundLabel, brand.clubName, stream, summaryFixtures.length)
+      : singleData
+        ? buildCaptionByType(selectedTemplate.post_type === "result_single" ? "result_single" : "preview_single", singleData, brand.clubName)
+        : "");
+
     const supabase = createClient();
     const { error } = await supabase.from("social_posts").insert({
       club_id: brand.clubId,
       fixture_id: sourceFixture.id,
       template_id: selectedTemplate.id,
       post_type: selectedTemplate.post_type,
-      caption,
+      caption: captionToSave,
       status,
       generated_by: null
     });
 
+    setCaption(captionToSave);
     setMessage(error ? error.message : `Saved as ${status}.`);
   };
 
+  const quickTemplateHint = selectedTemplate ? `${selectedTemplate.name} | ${templateOptions.aspectRatio}` : "Select fixture";
+
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[350px_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[350px_1fr]">
       <aside className="glass-panel rounded-2xl p-4">
         <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Generator Mode</p>
-          <div className="flex gap-2">
+          <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Workflow</p>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setComposeMode("single")}
-              className={`rounded-md px-3 py-2 text-sm ${composeMode === "single" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
+              onClick={() => setWorkflowMode("quick")}
+              className={`rounded-md px-3 py-2 text-sm font-semibold ${workflowMode === "quick" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
             >
-              Single
+              Quick Post
             </button>
             <button
               type="button"
-              onClick={() => setComposeMode("summary")}
-              className={`rounded-md px-3 py-2 text-sm ${composeMode === "summary" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
+              onClick={() => setWorkflowMode("full")}
+              className={`rounded-md px-3 py-2 text-sm font-semibold ${workflowMode === "full" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
             >
-              Round Summary
+              Full Mode
             </button>
           </div>
+          {workflowMode === "quick" ? <p className="text-xs text-command-muted">Fast game-day flow with minimal controls.</p> : null}
         </div>
+
+        {workflowMode === "full" ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Generator Mode</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setComposeMode("single")}
+                className={`rounded-md px-3 py-2 text-sm ${composeMode === "single" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
+              >
+                Single
+              </button>
+              <button
+                type="button"
+                onClick={() => setComposeMode("summary")}
+                className={`rounded-md px-3 py-2 text-sm ${composeMode === "summary" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
+              >
+                Round Summary
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-4 space-y-2">
           <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Fixture Feed</p>
@@ -403,55 +470,75 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         )}
       </aside>
 
-      <section className="space-y-4">
+      <section className="space-y-4 pb-24 md:pb-4">
         <div className="glass-panel rounded-2xl p-4">
           <h3 className="text-lg font-semibold">Post Setup</h3>
-          <label className="mt-3 block space-y-1">
-            <span className="text-xs text-command-muted">Template</span>
-            <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              {availableTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <p className="mt-1 text-sm text-command-muted">{quickTemplateHint}</p>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="space-y-1">
-              <span className="text-xs text-command-muted">Background</span>
-              <select value={backgroundAssetId} onChange={(event) => setBackgroundAssetId(event.target.value)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-                <option value="">Graphic fallback</option>
-                {mediaOptions.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.alt_text || asset.file_path}
-                  </option>
-                ))}
-              </select>
-            </label>
+          {workflowMode === "full" ? (
+            <>
+              <label className="mt-3 block space-y-1">
+                <span className="text-xs text-command-muted">Template</span>
+                <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
+                  {availableTemplates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="space-y-1">
-              <span className="text-xs text-command-muted">Aspect</span>
-              <select value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as TemplateOptions["aspectRatio"])} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-                <option value="square">Square</option>
-                <option value="portrait">Portrait</option>
-              </select>
-            </label>
-          </div>
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="space-y-1">
+                  <span className="text-xs text-command-muted">Aspect</span>
+                  <select value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as TemplateOptions["aspectRatio"])} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
+                    <option value="square">Square</option>
+                    <option value="portrait">Portrait</option>
+                  </select>
+                </label>
+              </div>
 
-          <div className="mt-3 flex flex-wrap gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-command-muted">
-              <input type="checkbox" checked={showSponsorStrip} onChange={(event) => setShowSponsorStrip(event.target.checked)} />
-              <span>Sponsor strip</span>
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-command-muted">
-              <input type="checkbox" checked={showLogo} onChange={(event) => setShowLogo(event.target.checked)} />
-              <span>Show logo</span>
-            </label>
-          </div>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <label className="inline-flex items-center gap-2 text-sm text-command-muted">
+                  <input type="checkbox" checked={showSponsorStrip} onChange={(event) => setShowSponsorStrip(event.target.checked)} />
+                  <span>Sponsor strip</span>
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-command-muted">
+                  <input type="checkbox" checked={showLogo} onChange={(event) => setShowLogo(event.target.checked)} />
+                  <span>Show logo</span>
+                </label>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-xs text-command-muted">Backgrounds</p>
+                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  <button
+                    type="button"
+                    onClick={() => setBackgroundAssetId("")}
+                    className={`rounded-md border p-2 text-xs ${backgroundAssetId === "" ? "border-command-accent bg-command-accent/10" : "border-white/15 bg-black/20"}`}
+                  >
+                    No Image
+                  </button>
+                  {mediaOptions.slice(0, 8).map((asset) => (
+                    <button
+                      key={asset.id}
+                      type="button"
+                      onClick={() => setBackgroundAssetId(asset.id)}
+                      className={`overflow-hidden rounded-md border ${backgroundAssetId === asset.id ? "border-command-accent" : "border-white/15"}`}
+                      title={asset.alt_text || asset.file_path}
+                    >
+                      <div className="aspect-square bg-black/20">
+                        <Image src={asset.publicUrl} alt={asset.alt_text || asset.file_path} width={320} height={320} className="h-full w-full object-cover" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
 
-        <div ref={previewRef}>
+        <div ref={previewRef} className="overflow-hidden rounded-2xl">
           <SocialPreview
             template={selectedTemplate}
             data={singleData}
@@ -463,36 +550,47 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
         <div className="glass-panel rounded-2xl p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-command-accent">Caption Editor</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-command-accent">Caption</h4>
             <button type="button" onClick={generateCaption} className="text-xs text-command-muted underline">
-              Generate Caption
+              Generate
             </button>
           </div>
 
           <textarea
             value={caption}
             onChange={(event) => setCaption(event.target.value)}
-            rows={6}
+            rows={workflowMode === "quick" ? 4 : 6}
             className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
             placeholder="Generate a caption, then edit before publishing."
           />
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={copyCaption} className="rounded-md border border-white/15 px-3 py-2 text-sm">
-              Copy
+          <div className="mt-3 hidden flex-wrap gap-2 md:flex">
+            <button type="button" onClick={() => savePost("draft")} className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold">
+              Save Draft
+            </button>
+            <button type="button" onClick={copyCaption} className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold">
+              Copy Caption
             </button>
             <button type="button" onClick={exportPng} className="rounded-md bg-command-accent px-3 py-2 text-sm font-semibold text-black">
               Export PNG
             </button>
-            <button type="button" onClick={() => savePost("draft")} className="rounded-md border border-white/15 px-3 py-2 text-sm">
-              Save Draft
-            </button>
-            <button type="button" onClick={() => savePost("posted")} className="rounded-md border border-command-accent/70 px-3 py-2 text-sm text-command-accent">
-              Mark Posted
-            </button>
           </div>
 
           {message ? <p className="mt-2 text-xs text-command-muted">{message}</p> : null}
+        </div>
+
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/15 bg-[#051b12]/95 p-3 backdrop-blur md:hidden">
+          <div className="grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => savePost("draft")} className="rounded-md border border-white/20 px-3 py-3 text-xs font-semibold">
+              Save Draft
+            </button>
+            <button type="button" onClick={copyCaption} className="rounded-md border border-white/20 px-3 py-3 text-xs font-semibold">
+              Copy
+            </button>
+            <button type="button" onClick={exportPng} className="rounded-md bg-command-accent px-3 py-3 text-xs font-black text-black">
+              Export
+            </button>
+          </div>
         </div>
       </section>
     </div>

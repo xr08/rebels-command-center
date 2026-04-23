@@ -10,6 +10,7 @@ type AssetType = "background" | "logo" | "sponsor";
 export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAssetRecord[]; clubId: string }) {
   const [media, setMedia] = useState(initialMedia);
   const [assetType, setAssetType] = useState<AssetType>("background");
+  const [typeFilter, setTypeFilter] = useState<AssetType | "all">("all");
   const [altText, setAltText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -17,11 +18,14 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
   const supabase = createClient();
 
   const mediaWithUrls = useMemo(() => {
-    return media.map((asset) => ({
+    const sorted = [...media].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    const filtered = typeFilter === "all" ? sorted : sorted.filter((asset) => asset.media_type === typeFilter);
+
+    return filtered.map((asset) => ({
       ...asset,
       publicUrl: supabase.storage.from(asset.storage_bucket).getPublicUrl(asset.file_path).data.publicUrl
     }));
-  }, [media, supabase]);
+  }, [media, supabase, typeFilter]);
 
   const onUpload = async (file: File) => {
     setIsUploading(true);
@@ -106,6 +110,23 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="md:col-span-2 xl:col-span-3">
+          <div className="flex flex-wrap gap-2">
+            {(["all", "background", "logo", "sponsor"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTypeFilter(type)}
+                className={`rounded-md px-3 py-1 text-xs font-semibold uppercase ${
+                  typeFilter === type ? "bg-command-accent text-black" : "border border-white/20 text-command-muted"
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {mediaWithUrls.map((asset) => (
           <article key={asset.id} className="glass-panel rounded-xl p-3">
             <div className="aspect-video overflow-hidden rounded-lg border border-white/10 bg-black/20">
@@ -113,7 +134,12 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
                 <Image src={asset.publicUrl} alt={asset.alt_text ?? asset.file_path} width={640} height={360} className="h-full w-full object-cover" />
               ) : null}
             </div>
-            <p className="mt-2 text-xs uppercase tracking-[0.14em] text-command-accent">{asset.media_type}</p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="rounded bg-command-accent/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-command-accent">
+                {asset.media_type}
+              </p>
+              <p className="text-[10px] text-command-muted">{new Date(asset.created_at).toLocaleDateString("en-AU")}</p>
+            </div>
             <p className="mt-1 truncate text-sm font-semibold">{asset.file_path}</p>
             <p className="mt-1 text-xs text-command-muted">{asset.alt_text ?? "No alt text"}</p>
           </article>

@@ -7,7 +7,31 @@ export default async function HistoryPage() {
 
   return (
     <DashboardShell title="Post History" subtitle="Track social generation output and publication status.">
-      <div className="glass-panel overflow-hidden rounded-xl">
+      <div className="space-y-3 md:hidden">
+        {posts.map((post) => (
+          <article key={post.id} className="glass-panel rounded-xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">{post.post_type}</p>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  post.status === "posted" ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"
+                }`}
+              >
+                {post.status}
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-command-muted">
+              {post.fixtures?.round_label} vs {post.fixtures?.opponent_name}
+            </p>
+            <p className="mt-1 text-xs text-command-muted">{new Date(post.created_at).toLocaleString("en-AU")}</p>
+            <Link href={`/social?draft=${post.id}`} className="mt-3 inline-block rounded-md border border-command-accent/50 px-3 py-1 text-xs text-command-accent hover:bg-command-accent/10">
+              {post.status === "draft" ? "Open Draft" : "Reuse Post"}
+            </Link>
+          </article>
+        ))}
+      </div>
+
+      <div className="glass-panel hidden overflow-hidden rounded-xl md:block">
         <table className="w-full text-sm">
           <thead className="bg-black/30 text-left text-xs uppercase tracking-[0.14em] text-command-muted">
             <tr>
