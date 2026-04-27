@@ -8,6 +8,7 @@ type TemplateLayout = {
   headerClass: string;
   heroClass: string;
   contentClass: string;
+  contentJustifyClass: string;
   footerClass: string;
   showFooter: boolean;
 };
@@ -43,6 +44,7 @@ export function getTemplateLayout(
         framePaddingClass,
         gridRows: showSponsorStrip ? rows(15, 2, 73, 10) : rows(15, 2, 83, 0),
         ...classes,
+        contentJustifyClass: "justify-start",
         showFooter
       };
     }
@@ -52,23 +54,26 @@ export function getTemplateLayout(
         framePaddingClass,
         gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(16, 3, 81, 0),
         ...classes,
+        contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
         showFooter
       };
     }
 
-    return {
-      framePaddingClass,
-      gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(17, 3, 80, 0),
-      ...classes,
-      showFooter
-    };
-  }
+      return {
+        framePaddingClass,
+        gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(17, 3, 80, 0),
+        ...classes,
+        contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
+        showFooter
+      };
+    }
 
   if (layoutKind === "summary") {
     return {
       framePaddingClass,
       gridRows: showSponsorStrip ? rows(19, 2, 69, 10) : rows(19, 2, 79, 0),
       ...classes,
+      contentJustifyClass: "justify-start",
       showFooter
     };
   }
@@ -78,6 +83,7 @@ export function getTemplateLayout(
       framePaddingClass,
       gridRows: showSponsorStrip ? rows(19, 3, 68, 10) : rows(19, 3, 78, 0),
       ...classes,
+      contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
       showFooter
     };
   }
@@ -86,6 +92,7 @@ export function getTemplateLayout(
     framePaddingClass,
     gridRows: showSponsorStrip ? rows(20, 3, 67, 10) : rows(21, 3, 76, 0),
     ...classes,
+    contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
     showFooter
   };
 }

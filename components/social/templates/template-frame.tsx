@@ -122,7 +122,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
 
         <div className={`self-stretch ${layout.heroClass}`} />
 
-        <div className={`${layout.contentClass} flex flex-col justify-start self-stretch`}>{children}</div>
+        <div className={`${layout.contentClass} flex flex-col ${layout.contentJustifyClass} self-stretch`}>{children}</div>
 
         {layout.showFooter ? (
           <footer className={`${layout.footerClass} flex items-end self-stretch`}>
