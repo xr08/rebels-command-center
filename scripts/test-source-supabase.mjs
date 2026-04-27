@@ -10,8 +10,13 @@ const supabase = createClient(
 
 const { data, error } = await supabase
   .from("fixtures")
-  .select("*")
+  .select(`
+    *,
+    home_team:home_team_id (*),
+    away_team:away_team_id (*),
+    venue:venue_id (*)
+  `)
   .limit(5);
 
 console.log("error:", error);
-console.log("data:", data);
+console.dir(data, { depth: null });
