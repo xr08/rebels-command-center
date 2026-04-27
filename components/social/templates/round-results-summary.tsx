@@ -44,6 +44,18 @@ function formatFixtureTime(value: string) {
   }).format(new Date(value)).toLowerCase();
 }
 
+function formatTeamLabelForSummary(value?: string) {
+  if (!value) {
+    return "Rebels";
+  }
+
+  return value
+    .replace(/fremantle\s+rebels/gi, "Rebels")
+    .replace(/\bu(\d{1,2})\b/gi, "U$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function formatRoundDateRange(fixtures: FixtureRecord[]) {
   const uniqueDates = Array.from(
     new Set(
@@ -85,21 +97,14 @@ function formatRoundDateRange(fixtures: FixtureRecord[]) {
   return `${start} - ${end}`;
 }
 
-function getOpponentShortName(opponent: string, isBye?: boolean) {
-  if (isBye) {
-    return "BYE";
-  }
-  const [firstWord] = opponent.trim().split(/\s+/);
-  return firstWord || opponent;
-}
-
 function getMatchLabel(fixture: FixtureRecord) {
-  const teamLabel = fixture.teams?.name ?? "Rebels";
+  const teamLabel = formatTeamLabelForSummary(fixture.teams?.name);
   if (fixture.is_bye) {
     return `${teamLabel} | BYE`;
   }
-  const opponent = getOpponentShortName(fixture.opponent_name, fixture.is_bye);
-  return `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)}`;
+  const opponent = fixture.opponent_name;
+  const side = fixture.home_or_away ?? "TBC";
+  return `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`;
 }
 
 export function RoundResultsSummaryTemplate({ fixtures, options, brand }: Props) {
