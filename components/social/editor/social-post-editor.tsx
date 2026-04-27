@@ -480,7 +480,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                     {fixture.is_bye ? `${fixture.teams?.name ?? "Rebels"} | BYE` : `${fixture.teams?.name ?? "Rebels"} vs ${fixture.opponent_name}`}
                   </p>
                   <p className="text-xs text-command-muted">
-                    {fixture.is_bye ? "BYE" : `${fixture.home_or_away ?? "TBC"} | ${fixture.venue}`}
+                    {fixture.is_bye ? "BYE" : fixture.home_or_away ?? "TBC"}
                   </p>
                 </button>
               </li>
