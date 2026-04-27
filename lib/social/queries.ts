@@ -2,6 +2,19 @@ import { createClient } from "@/lib/supabase/server";
 import type { Stream } from "@/types/social";
 import type { FixtureRecord, MediaAssetRecord, SocialPostDraftRecord, SocialPostHistoryRecord, TemplateRecord } from "@/types/social-data";
 
+function normalizeFixtureStatus(value: unknown): "scheduled" | "completed" | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "scheduled" || normalized === "completed") {
+    return normalized;
+  }
+
+  return null;
+}
+
 export async function getClubId() {
   const supabase = createClient();
   const { data, error } = await supabase.from("clubs").select("id").order("created_at", { ascending: true }).limit(1).single();
@@ -16,37 +29,64 @@ export async function getFixtures(stream: Stream = "all"): Promise<FixtureRecord
   const supabase = createClient();
   const clubId = await getClubId();
 
-  if (!clubId) {
-    return [];
-  }
-
-  let query = supabase
+  const baseQuery = supabase
     .from("fixtures")
     .select(
       "id, club_id, team_id, opponent_name, round_label, fixture_date, venue, status, home_score, away_score, result_outcome, teams (name, stream)"
     )
-    .eq("club_id", clubId)
     .order("fixture_date", { ascending: true });
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("[queries.getFixtures] Failed to load fixtures:", error.message);
+  const scopedQuery = clubId ? baseQuery.eq("club_id", clubId) : baseQuery;
+  const { data: scopedData, error: scopedError } = await scopedQuery;
+
+  if (scopedError) {
+    console.error("[queries.getFixtures] Failed to load club-scoped fixtures:", scopedError.message);
     return [];
   }
-  const fixtures: FixtureRecord[] = (data ?? []).map((row: any) => ({
-    id: row.id,
-    club_id: row.club_id,
-    team_id: row.team_id,
-    opponent_name: row.opponent_name,
-    round_label: row.round_label,
-    fixture_date: row.fixture_date,
-    venue: row.venue,
-    status: row.status,
-    home_score: row.home_score,
-    away_score: row.away_score,
-    result_outcome: row.result_outcome,
-    teams: Array.isArray(row.teams) ? row.teams[0] : row.teams
-  }));
+
+  let fixtureRows = scopedData ?? [];
+
+  // If club scoping returns nothing, fall back to all fixtures to avoid silent empty states
+  // when manually-entered rows use a different club id.
+  if (clubId && fixtureRows.length === 0) {
+    const { data: fallbackData, error: fallbackError } = await baseQuery;
+    if (fallbackError) {
+      console.error("[queries.getFixtures] Failed to load fallback fixtures:", fallbackError.message);
+      return [];
+    }
+    fixtureRows = fallbackData ?? [];
+    if (fixtureRows.length > 0) {
+      console.warn("[queries.getFixtures] Club-scoped query returned no fixtures; using fallback all-clubs result.");
+    }
+  }
+
+  const mappedFixtures: Array<FixtureRecord | null> = fixtureRows.map((row: any) => {
+      const status = normalizeFixtureStatus(row.status);
+      if (!status) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        club_id: row.club_id,
+        team_id: row.team_id,
+        opponent_name: row.opponent_name,
+        round_label: row.round_label,
+        fixture_date: row.fixture_date,
+        venue: row.venue,
+        status,
+        home_score: row.home_score,
+        away_score: row.away_score,
+        result_outcome: row.result_outcome,
+        teams: row.teams ? (Array.isArray(row.teams) ? row.teams[0] : row.teams) : undefined
+      };
+    });
+
+  const fixtures = mappedFixtures.filter((fixture): fixture is FixtureRecord => fixture !== null);
+
+  if (fixtures.length === 0) {
+    console.warn("[queries.getFixtures] No fixtures available after status normalization/filtering.");
+  }
 
   if (stream === "all") {
     return fixtures;
@@ -57,7 +97,8 @@ export async function getFixtures(stream: Stream = "all"): Promise<FixtureRecord
 
 export async function getFixturesByStatus(status: "scheduled" | "completed", stream: Stream = "all"): Promise<FixtureRecord[]> {
   const fixtures = await getFixtures(stream);
-  return fixtures.filter((fixture) => fixture.status === status);
+  const target = status.toLowerCase();
+  return fixtures.filter((fixture) => fixture.status.toLowerCase() === target);
 }
 
 export async function getTemplates(): Promise<TemplateRecord[]> {

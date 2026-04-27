@@ -3,6 +3,9 @@ import { SocialPostEditor } from "@/components/social/editor/social-post-editor"
 import { getBrandSettings } from "@/lib/branding/settings";
 import { getFixturesByStatus, getMediaAssets, getSocialPostDraftById, getTemplates } from "@/lib/social/queries";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function SocialPage({
   searchParams
 }: {
