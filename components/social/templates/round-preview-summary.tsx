@@ -104,19 +104,24 @@ function getMatchLabel(fixture: FixtureRecord) {
 
 export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props) {
   const styleVariant = options.styleVariant ?? "classic-green";
+  const fixtureCount = fixtures.length;
+  const isDense = fixtureCount > 10;
+  const isCompact = fixtureCount > 6;
   const round = fixtures[0]?.round_label ?? "Round Preview";
   const grouped = groupByStream(fixtures);
   const streamEntries = Object.entries(grouped);
   const dateLabel = formatRoundDateRange(fixtures);
   const panelClass = styleVariant === "minimal-board"
-    ? "space-y-3 rounded-2xl border border-white/30 bg-black/20 p-4 md:p-5"
+    ? "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-white/30 bg-black/20 p-3 md:p-4"
     : styleVariant === "bold-gold"
-      ? "space-y-3 rounded-2xl border border-black/15 bg-white/20 p-4 backdrop-blur-sm md:p-5"
-      : "space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5";
+      ? "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-black/15 bg-white/20 p-3 backdrop-blur-sm md:p-4"
+      : "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-white/20 bg-black/35 p-3 backdrop-blur-sm md:p-4";
   const rowClass = styleVariant === "bold-gold"
-    ? "grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-black/10 bg-white/30 px-3 py-2 text-sm"
-    : "grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm";
-  const rowTextClass = styleVariant === "bold-gold" ? "truncate font-semibold text-black" : "truncate font-semibold text-white";
+    ? `grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg border border-black/10 bg-white/30 ${isDense ? "px-2 py-1" : isCompact ? "px-2.5 py-1.5" : "px-3 py-2"} ${isDense ? "text-[11px]" : "text-sm"}`
+    : `grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg border border-white/10 bg-white/5 ${isDense ? "px-2 py-1" : isCompact ? "px-2.5 py-1.5" : "px-3 py-2"} ${isDense ? "text-[11px]" : "text-sm"}`;
+  const rowTextClass = styleVariant === "bold-gold"
+    ? "truncate font-semibold leading-tight text-black"
+    : "truncate font-semibold leading-tight text-white";
 
   return (
     <TemplateFrame
@@ -126,13 +131,14 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
       primaryColor={brand.primaryColor}
       accentColor={brand.accentColor}
       logoPath={brand.logoPath}
+      layoutKind="summary"
       options={options}
     >
       <div className={panelClass}>
         {streamEntries.map(([stream, streamFixtures]) => (
-          <section key={stream} className="space-y-2">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
-              {`${round} | ${formatStreamLabel(stream)} | ${streamFixtures.length} fixtures`}
+          <section key={stream} className={isDense ? "space-y-1" : "space-y-2"}>
+            <p className={`${isDense ? "text-[10px]" : "text-[11px]"} uppercase tracking-[0.16em] text-white/70`}>
+              {`${formatStreamLabel(stream)} | ${streamFixtures.length} fixtures`}
             </p>
             {streamFixtures.map((fixture) => {
               const label = getMatchLabel(fixture);

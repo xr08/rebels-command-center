@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getTemplateLayout, type TemplateLayoutKind } from "@/lib/social/template-layout";
 import type { TemplateOptions } from "@/types/social-data";
 
 type TemplateFrameProps = {
@@ -8,11 +9,12 @@ type TemplateFrameProps = {
   primaryColor: string;
   accentColor: string;
   logoPath?: string | null;
+  layoutKind?: TemplateLayoutKind;
   options?: TemplateOptions;
   children: React.ReactNode;
 };
 
-export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentColor, logoPath, options, children }: TemplateFrameProps) {
+export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentColor, logoPath, layoutKind = "single", options, children }: TemplateFrameProps) {
   const safeOptions: TemplateOptions = options ?? {
     aspectRatio: "square",
     showSponsorStrip: true,
@@ -22,6 +24,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
     exportMode: false
   };
   const styleVariant = safeOptions.styleVariant ?? "classic-green";
+  const layout = getTemplateLayout(safeOptions.aspectRatio, layoutKind, safeOptions.showSponsorStrip);
 
   const ratioClass = safeOptions.exportMode
     ? "h-full w-full max-w-none aspect-auto rounded-none"
@@ -59,9 +62,8 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
   const clubColor = styleVariant === "bold-gold" ? "#044229" : accentColor;
   const dividerColor = styleVariant === "minimal-board" ? "rgba(255, 255, 255, 0.45)" : accentColor;
   const sponsorBarClass = styleVariant === "sponsor-clean"
-    ? "mt-4 rounded-xl border border-white/30 bg-white/10 px-4 py-2 backdrop-blur-sm"
-    : "mt-4 rounded-xl border border-white/20 bg-black/30 px-4 py-2 backdrop-blur-sm";
-  const panelPadding = styleVariant === "minimal-board" ? "p-5 md:p-6" : "p-6 md:p-8";
+    ? "rounded-xl border border-white/30 bg-white/10 px-4 py-2 backdrop-blur-sm"
+    : "rounded-xl border border-white/20 bg-black/30 px-4 py-2 backdrop-blur-sm";
 
   return (
     <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 text-white shadow-premium ${ratioClass}`}>
@@ -87,8 +89,8 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
       ) : null}
       <div className={`absolute inset-x-0 bottom-0 h-28 ${styleVariant === "bold-gold" ? "bg-gradient-to-t from-black/30 to-transparent" : "bg-gradient-to-t from-black/65 to-transparent"}`} />
 
-      <div className={`relative z-10 flex h-full flex-col justify-between ${panelPadding}`}>
-        <header className="space-y-4">
+      <div className={`relative z-10 flex h-full flex-col ${layout.framePaddingClass} ${styleVariant === "minimal-board" ? "pt-5 md:pt-6" : ""}`}>
+        <header className={`space-y-4 ${layout.headerClass}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p
@@ -114,12 +116,16 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
           <div className="h-[3px] w-24 rounded-full" style={{ backgroundColor: dividerColor }} />
         </header>
 
-        <div>{children}</div>
+        <div className={layout.heroClass} />
 
-        {safeOptions.showSponsorStrip ? (
-          <footer className={sponsorBarClass}>
+        <div className={`${layout.contentClass} flex flex-col justify-start`}>{children}</div>
+
+        {layout.showFooter ? (
+          <footer className={`${layout.footerClass} flex items-end`}>
+            <div className={sponsorBarClass}>
             <p className={`text-[10px] uppercase tracking-[0.22em] ${styleVariant === "bold-gold" ? "text-black/70" : "text-white/70"}`}>Proudly Supported By</p>
             <p className={`mt-1 text-sm font-semibold ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>Fremantle Rebels Partners</p>
+            </div>
           </footer>
         ) : null}
       </div>
