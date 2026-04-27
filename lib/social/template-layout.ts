@@ -44,7 +44,7 @@ export function getTemplateLayout(
         framePaddingClass,
         gridRows: showSponsorStrip ? rows(15, 2, 73, 10) : rows(15, 2, 83, 0),
         ...classes,
-        contentJustifyClass: "justify-start",
+        contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-start",
         showFooter
       };
     }
@@ -54,7 +54,7 @@ export function getTemplateLayout(
         framePaddingClass,
         gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(16, 3, 81, 0),
         ...classes,
-        contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
+        contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-center",
         showFooter
       };
     }
@@ -63,7 +63,7 @@ export function getTemplateLayout(
         framePaddingClass,
         gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(17, 3, 80, 0),
         ...classes,
-        contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
+        contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-center",
         showFooter
       };
     }
@@ -73,7 +73,7 @@ export function getTemplateLayout(
       framePaddingClass,
       gridRows: showSponsorStrip ? rows(19, 2, 69, 10) : rows(19, 2, 79, 0),
       ...classes,
-      contentJustifyClass: "justify-start",
+      contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-start",
       showFooter
     };
   }
@@ -83,7 +83,7 @@ export function getTemplateLayout(
       framePaddingClass,
       gridRows: showSponsorStrip ? rows(19, 3, 68, 10) : rows(19, 3, 78, 0),
       ...classes,
-      contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
+      contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-center",
       showFooter
     };
   }
@@ -92,7 +92,7 @@ export function getTemplateLayout(
     framePaddingClass,
     gridRows: showSponsorStrip ? rows(20, 3, 67, 10) : rows(21, 3, 76, 0),
     ...classes,
-    contentJustifyClass: showSponsorStrip ? "justify-start" : "justify-center",
+    contentJustifyClass: showSponsorStrip ? "justify-end" : "justify-center",
     showFooter
   };
 }
