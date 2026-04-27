@@ -1,4 +1,5 @@
 import { TemplateFrame } from "./template-frame";
+import { formatSummaryName } from "./summary-name-formatter";
 import type { FixtureRecord, TemplateOptions } from "@/types/social-data";
 
 type Props = {
@@ -44,18 +45,6 @@ function formatFixtureTime(value: string) {
   }).format(new Date(value)).toLowerCase();
 }
 
-function formatTeamLabelForSummary(value?: string) {
-  if (!value) {
-    return "Rebels";
-  }
-
-  return value
-    .replace(/fremantle\s+rebels/gi, "Rebels")
-    .replace(/\bu(\d{1,2})\b/gi, "U$1")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function formatRoundDateRange(fixtures: FixtureRecord[]) {
   const uniqueDates = Array.from(
     new Set(
@@ -98,13 +87,19 @@ function formatRoundDateRange(fixtures: FixtureRecord[]) {
 }
 
 function getMatchLabel(fixture: FixtureRecord) {
-  const teamLabel = formatTeamLabelForSummary(fixture.teams?.name);
+  const teamLabel = formatSummaryName(fixture.teams?.name) || "Rebels";
   if (fixture.is_bye) {
-    return `${teamLabel} | BYE`;
+    return {
+      compact: `${teamLabel} | BYE`,
+      full: `${fixture.teams?.name ?? "Rebels"} | BYE`
+    };
   }
-  const opponent = fixture.opponent_name;
+  const opponent = formatSummaryName(fixture.opponent_name) || fixture.opponent_name;
   const side = fixture.home_or_away ?? "TBC";
-  return `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`;
+  return {
+    compact: `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`,
+    full: `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`
+  };
 }
 
 export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props) {
@@ -129,12 +124,17 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
               {`${round} | ${formatStreamLabel(stream)} | ${streamFixtures.length} fixtures`}
             </p>
-            {streamFixtures.map((fixture) => (
-              <div key={fixture.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                <span className="truncate font-semibold text-white">{getMatchLabel(fixture)}</span>
-                {fixture.is_bye ? <span className="text-xs text-command-accent">BYE</span> : <span />}
-              </div>
-            ))}
+            {streamFixtures.map((fixture) => {
+              const label = getMatchLabel(fixture);
+              return (
+                <div key={fixture.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
+                  <span className="truncate font-semibold text-white" title={label.full} aria-label={label.full}>
+                    {label.compact}
+                  </span>
+                  {fixture.is_bye ? <span className="text-xs text-command-accent">BYE</span> : <span />}
+                </div>
+              );
+            })}
           </section>
         ))}
       </div>
