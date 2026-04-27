@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { SocialPreview } from "@/components/social/preview/social-preview";
+import { isCanvasTemplateKey, renderPostToDataUrl } from "@/lib/social/canvas/render-post";
 import {
   buildCaptionByType,
   buildCustomCaption,
@@ -417,28 +418,45 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   };
 
   const exportPng = async () => {
-    if (!exportRef.current || !selectedTemplate) {
+    if (!selectedTemplate) {
       return;
     }
     try {
-      const { width, height } = getExportSize(exportOptions.aspectRatio);
-      const dataUrl = await toPng(exportRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        width,
-        height,
-        canvasWidth: width,
-        canvasHeight: height,
-        backgroundColor: brand.primaryColor || "#044229",
-        style: {
-          width: `${width}px`,
-          height: `${height}px`,
-          margin: "0",
-          padding: "0",
-          overflow: "hidden",
-          background: brand.primaryColor || "#044229"
+      let dataUrl = "";
+
+      if (isCanvasTemplateKey(selectedTemplate.component_key)) {
+        dataUrl = await renderPostToDataUrl({
+          templateKey: selectedTemplate.component_key,
+          options: exportOptions,
+          brand: previewBrand,
+          data: singleData,
+          summaryFixtures: builderMode === "fixture" ? summaryFixtures : []
+        });
+      } else {
+        if (!exportRef.current) {
+          setMessage("Export frame is unavailable for this template.");
+          return;
         }
-      });
+
+        const { width, height } = getExportSize(exportOptions.aspectRatio);
+        dataUrl = await toPng(exportRef.current, {
+          cacheBust: true,
+          pixelRatio: 2,
+          width,
+          height,
+          canvasWidth: width,
+          canvasHeight: height,
+          backgroundColor: brand.primaryColor || "#044229",
+          style: {
+            width: `${width}px`,
+            height: `${height}px`,
+            margin: "0",
+            padding: "0",
+            overflow: "hidden",
+            background: brand.primaryColor || "#044229"
+          }
+        });
+      }
 
       const fileLabel = builderMode === "custom"
         ? (selectedTemplate.name || "custom-post")

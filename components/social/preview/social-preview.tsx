@@ -1,13 +1,11 @@
-import { GameDaySingleTemplate } from "@/components/social/templates/game-day-single";
-import { ResultSingleTemplate } from "@/components/social/templates/result-single";
-import { RoundPreviewSummaryTemplate } from "@/components/social/templates/round-preview-summary";
-import { RoundResultsSummaryTemplate } from "@/components/social/templates/round-results-summary";
+import { CanvasPreview } from "@/components/social/preview/canvas-preview";
 import { PlayerOfTheDayTemplate } from "@/components/social/templates/player-of-the-day";
 import { SponsorHighlightTemplate } from "@/components/social/templates/sponsor-highlight";
 import { TrainingReminderTemplate } from "@/components/social/templates/training-reminder";
 import { EventAnnouncementTemplate } from "@/components/social/templates/event-announcement";
 import { GeneralAnnouncementTemplate } from "@/components/social/templates/general-announcement";
 import { PhotoHighlightTemplate } from "@/components/social/templates/photo-highlight";
+import { isCanvasTemplateKey } from "@/lib/social/canvas/render-post";
 import type { CustomTemplateData, FixtureRecord, TemplateFixtureProps, TemplateOptions, TemplateRecord } from "@/types/social-data";
 
 type Props = {
@@ -34,11 +32,11 @@ export function SocialPreview({ template, data, customData, summaryFixtures, opt
   }
 
   if (template.component_key === "round_preview_summary") {
-    return <RoundPreviewSummaryTemplate fixtures={summaryFixtures} options={options} brand={brand} />;
+    return <CanvasPreview templateKey="round_preview_summary" summaryFixtures={summaryFixtures} options={options} brand={brand} />;
   }
 
   if (template.component_key === "round_results_summary") {
-    return <RoundResultsSummaryTemplate fixtures={summaryFixtures} options={options} brand={brand} />;
+    return <CanvasPreview templateKey="round_results_summary" summaryFixtures={summaryFixtures} options={options} brand={brand} />;
   }
 
   const missingCustom = (
@@ -80,8 +78,19 @@ export function SocialPreview({ template, data, customData, summaryFixtures, opt
   }
 
   if (template.component_key === "result_single") {
-    return <ResultSingleTemplate data={data} options={options} brand={brand} />;
+    return <CanvasPreview templateKey="result_single" data={data} options={options} brand={brand} />;
   }
 
-  return <GameDaySingleTemplate data={data} options={options} brand={brand} />;
+  if (template.component_key === "game_day_single" || template.component_key === "preview_single") {
+    return <CanvasPreview templateKey="game_day_single" data={data} options={options} brand={brand} />;
+  }
+
+  if (isCanvasTemplateKey(template.component_key)) {
+    return <CanvasPreview templateKey={template.component_key} data={data} summaryFixtures={summaryFixtures} options={options} brand={brand} />;
+  }
+  return (
+    <div className="glass-panel flex min-h-[320px] items-center justify-center rounded-2xl p-6 text-center text-command-muted">
+      Template renderer is not available for this post type.
+    </div>
+  );
 }
