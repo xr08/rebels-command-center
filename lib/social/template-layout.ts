@@ -4,6 +4,7 @@ export type TemplateLayoutKind = "single" | "summary" | "custom";
 
 type TemplateLayout = {
   framePaddingClass: string;
+  gridRows: [number, number, number, number];
   headerClass: string;
   heroClass: string;
   contentClass: string;
@@ -11,18 +12,17 @@ type TemplateLayout = {
   showFooter: boolean;
 };
 
-function rowsToTemplate(rows: {
-  header: string;
-  hero: string;
-  content: string;
-  footer: string;
-}): Pick<TemplateLayout, "headerClass" | "heroClass" | "contentClass" | "footerClass"> {
+function rowClasses(): Pick<TemplateLayout, "headerClass" | "heroClass" | "contentClass" | "footerClass"> {
   return {
-    headerClass: rows.header,
-    heroClass: rows.hero,
-    contentClass: rows.content,
-    footerClass: rows.footer
+    headerClass: "min-h-0",
+    heroClass: "min-h-0",
+    contentClass: "min-h-0",
+    footerClass: "min-h-0"
   };
+}
+
+function rows(header: number, hero: number, content: number, footer: number): [number, number, number, number] {
+  return [header, hero, content, footer];
 }
 
 export function getTemplateLayout(
@@ -30,20 +30,19 @@ export function getTemplateLayout(
   layoutKind: TemplateLayoutKind,
   showSponsorStrip: boolean
 ): TemplateLayout {
-  const framePaddingClass = aspectRatio === "portrait" ? "p-6 md:p-8" : "p-6 md:p-8";
-  const footerOffClass = "hidden";
+  // Calibrated export layout ratios are tuned for fixed canvases:
+  // square 1080x1080 and portrait 1080x1350.
+  // Preview scales this same internal grid down, preserving export parity.
+  const framePaddingClass = "p-6 md:p-8";
   const showFooter = showSponsorStrip;
+  const classes = rowClasses();
 
   if (aspectRatio === "portrait") {
     if (layoutKind === "summary") {
       return {
         framePaddingClass,
-        ...rowsToTemplate({
-          header: "min-h-[16%]",
-          hero: showSponsorStrip ? "min-h-[3%]" : "min-h-[2%]",
-          content: showSponsorStrip ? "min-h-[69%]" : "min-h-[82%]",
-          footer: showSponsorStrip ? "min-h-[12%]" : footerOffClass
-        }),
+        gridRows: showSponsorStrip ? rows(15, 2, 73, 10) : rows(15, 2, 83, 0),
+        ...classes,
         showFooter
       };
     }
@@ -51,24 +50,16 @@ export function getTemplateLayout(
     if (layoutKind === "custom") {
       return {
         framePaddingClass,
-        ...rowsToTemplate({
-          header: "min-h-[15%]",
-          hero: showSponsorStrip ? "min-h-[5%]" : "min-h-[4%]",
-          content: showSponsorStrip ? "min-h-[70%]" : "min-h-[81%]",
-          footer: showSponsorStrip ? "min-h-[10%]" : footerOffClass
-        }),
+        gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(16, 3, 81, 0),
+        ...classes,
         showFooter
       };
     }
 
     return {
       framePaddingClass,
-      ...rowsToTemplate({
-        header: "min-h-[16%]",
-        hero: showSponsorStrip ? "min-h-[7%]" : "min-h-[6%]",
-        content: showSponsorStrip ? "min-h-[67%]" : "min-h-[78%]",
-        footer: showSponsorStrip ? "min-h-[10%]" : footerOffClass
-      }),
+      gridRows: showSponsorStrip ? rows(16, 3, 71, 10) : rows(17, 3, 80, 0),
+      ...classes,
       showFooter
     };
   }
@@ -76,12 +67,8 @@ export function getTemplateLayout(
   if (layoutKind === "summary") {
     return {
       framePaddingClass,
-      ...rowsToTemplate({
-        header: "min-h-[20%]",
-        hero: "min-h-[2%]",
-        content: showSponsorStrip ? "min-h-[68%]" : "min-h-[78%]",
-        footer: showSponsorStrip ? "min-h-[10%]" : footerOffClass
-      }),
+      gridRows: showSponsorStrip ? rows(19, 2, 69, 10) : rows(19, 2, 79, 0),
+      ...classes,
       showFooter
     };
   }
@@ -89,24 +76,16 @@ export function getTemplateLayout(
   if (layoutKind === "custom") {
     return {
       framePaddingClass,
-      ...rowsToTemplate({
-        header: "min-h-[19%]",
-        hero: showSponsorStrip ? "min-h-[4%]" : "min-h-[3%]",
-        content: showSponsorStrip ? "min-h-[67%]" : "min-h-[78%]",
-        footer: showSponsorStrip ? "min-h-[10%]" : footerOffClass
-      }),
+      gridRows: showSponsorStrip ? rows(19, 3, 68, 10) : rows(19, 3, 78, 0),
+      ...classes,
       showFooter
     };
   }
 
   return {
     framePaddingClass,
-    ...rowsToTemplate({
-      header: "min-h-[20%]",
-      hero: showSponsorStrip ? "min-h-[6%]" : "min-h-[5%]",
-      content: showSponsorStrip ? "min-h-[64%]" : "min-h-[75%]",
-      footer: showSponsorStrip ? "min-h-[10%]" : footerOffClass
-    }),
+    gridRows: showSponsorStrip ? rows(20, 3, 67, 10) : rows(21, 3, 76, 0),
+    ...classes,
     showFooter
   };
 }

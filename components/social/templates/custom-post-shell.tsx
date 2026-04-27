@@ -25,7 +25,7 @@ export function CustomPostShell({ data, options, brand, title }: Props) {
       layoutKind="custom"
       options={options}
     >
-      <div className="h-full space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
+      <div className="space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
         {data.heading ? <p className="text-xs uppercase tracking-[0.18em] text-command-accent">{data.heading}</p> : null}
         {data.title ? <h4 className="text-2xl font-black leading-tight text-white md:text-3xl">{data.title}</h4> : null}
         {data.bodyText ? <p className="text-sm leading-relaxed text-white/90 md:text-base">{data.bodyText}</p> : null}

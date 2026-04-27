@@ -64,6 +64,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
   const sponsorBarClass = styleVariant === "sponsor-clean"
     ? "rounded-xl border border-white/30 bg-white/10 px-4 py-2 backdrop-blur-sm"
     : "rounded-xl border border-white/20 bg-black/30 px-4 py-2 backdrop-blur-sm";
+  const gridTemplateRows = layout.gridRows.map((value) => `${value}fr`).join(" ");
 
   return (
     <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 text-white shadow-premium ${ratioClass}`}>
@@ -89,7 +90,10 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
       ) : null}
       <div className={`absolute inset-x-0 bottom-0 h-28 ${styleVariant === "bold-gold" ? "bg-gradient-to-t from-black/30 to-transparent" : "bg-gradient-to-t from-black/65 to-transparent"}`} />
 
-      <div className={`relative z-10 flex h-full flex-col ${layout.framePaddingClass} ${styleVariant === "minimal-board" ? "pt-5 md:pt-6" : ""}`}>
+      <div
+        className={`relative z-10 grid h-full ${layout.framePaddingClass} ${styleVariant === "minimal-board" ? "pt-5 md:pt-6" : ""}`}
+        style={{ gridTemplateRows }}
+      >
         <header className={`space-y-4 ${layout.headerClass}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -116,12 +120,12 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
           <div className="h-[3px] w-24 rounded-full" style={{ backgroundColor: dividerColor }} />
         </header>
 
-        <div className={layout.heroClass} />
+        <div className={`self-stretch ${layout.heroClass}`} />
 
-        <div className={`${layout.contentClass} flex flex-col justify-start`}>{children}</div>
+        <div className={`${layout.contentClass} flex flex-col justify-start self-stretch`}>{children}</div>
 
         {layout.showFooter ? (
-          <footer className={`${layout.footerClass} flex items-end`}>
+          <footer className={`${layout.footerClass} flex items-end self-stretch`}>
             <div className={sponsorBarClass}>
             <p className={`text-[10px] uppercase tracking-[0.22em] ${styleVariant === "bold-gold" ? "text-black/70" : "text-white/70"}`}>Proudly Supported By</p>
             <p className={`mt-1 text-sm font-semibold ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>Fremantle Rebels Partners</p>
