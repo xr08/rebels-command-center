@@ -340,7 +340,7 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
 
   const { data, error } = await supabase
     .from("social_posts")
-    .select("id, fixture_id, post_type, caption, status, image_path, created_at, fixtures(round_label, opponent_name), social_templates(name)")
+    .select("id, fixture_id, post_type, caption, status, image_path, created_at, social_templates(name)")
     .eq("club_id", clubId)
     .order("created_at", { ascending: false });
 
@@ -353,14 +353,13 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
   const sourceFixtureById = new Map(sourceFixtures.map((fixture) => [fixture.id, fixture]));
 
   return (data ?? []).map((row: any) => {
-    const joinedFixture = Array.isArray(row.fixtures) ? row.fixtures[0] : row.fixtures;
     const sourceFixture = sourceFixtureById.get(String(row.fixture_id));
-    const fixtureContext = joinedFixture ?? (sourceFixture
+    const fixtureContext = sourceFixture
       ? {
         round_label: sourceFixture.round_label,
         opponent_name: sourceFixture.opponent_name
       }
-      : null);
+      : null;
 
     return {
     id: row.id,
@@ -382,7 +381,7 @@ export async function getSocialPostDraftById(id: string): Promise<SocialPostDraf
   const supabase = createClient();
   const { data, error } = await supabase
     .from("social_posts")
-    .select("id, fixture_id, template_id, post_type, caption, status, fixtures(round_label)")
+    .select("id, fixture_id, template_id, post_type, caption, status")
     .eq("id", id)
     .single();
 
@@ -395,17 +394,13 @@ export async function getSocialPostDraftById(id: string): Promise<SocialPostDraf
     return null;
   }
 
-  const joinedFixture = Array.isArray(data.fixtures) ? data.fixtures[0] : data.fixtures;
-  let fixtureContext = joinedFixture;
-
-  if (!fixtureContext?.round_label) {
-    const sourceFixtures = await getFixtures("all");
-    const sourceFixture = sourceFixtures.find((fixture) => fixture.id === data.fixture_id);
-    if (sourceFixture) {
-      fixtureContext = {
-        round_label: sourceFixture.round_label
-      };
-    }
+  let fixtureContext: { round_label: string } | null = null;
+  const sourceFixtures = await getFixtures("all");
+  const sourceFixture = sourceFixtures.find((fixture) => fixture.id === data.fixture_id);
+  if (sourceFixture) {
+    fixtureContext = {
+      round_label: sourceFixture.round_label
+    };
   }
 
   return {
