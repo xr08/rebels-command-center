@@ -104,6 +104,14 @@ function getExportSize(aspectRatio: TemplateOptions["aspectRatio"]) {
   return { width: 1080, height: 1080 };
 }
 
+function getFriendlyWriteError(rawMessage: string) {
+  const message = rawMessage.toLowerCase();
+  if (message.includes("row-level security") || message.includes("permission denied")) {
+    return "Action blocked by permissions. Sign in with an authorised account and try again.";
+  }
+  return "Couldn't save right now. Please try again.";
+}
+
 export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, brand }: Props) {
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
@@ -278,37 +286,46 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     if (!caption) {
       return;
     }
-    await navigator.clipboard.writeText(caption);
-    setMessage("Caption copied.");
+    try {
+      await navigator.clipboard.writeText(caption);
+      setMessage("Caption copied.");
+    } catch (error) {
+      console.error("[social.copyCaption] Failed to copy caption:", error);
+      setMessage("Couldn't copy caption. You can still select and copy manually.");
+    }
   };
 
   const exportPng = async () => {
     if (!previewRef.current || !selectedTemplate) {
       return;
     }
+    try {
+      const { width, height } = getExportSize(templateOptions.aspectRatio);
+      const dataUrl = await toPng(previewRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        width,
+        height,
+        canvasWidth: width,
+        canvasHeight: height,
+        style: {
+          width: `${width}px`,
+          height: `${height}px`
+        }
+      });
 
-    const { width, height } = getExportSize(templateOptions.aspectRatio);
-    const dataUrl = await toPng(previewRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-      width,
-      height,
-      canvasWidth: width,
-      canvasHeight: height,
-      style: {
-        width: `${width}px`,
-        height: `${height}px`
-      }
-    });
-
-    const fileLabel = composeMode === "summary" ? roundLabel || "round" : selectedFixture?.round_label || "fixture";
-    const link = document.createElement("a");
-    link.download = `${fileLabel}-${selectedTemplate.component_key}-${templateOptions.aspectRatio}`
-      .toLowerCase()
-      .replace(/\s+/g, "-") + ".png";
-    link.href = dataUrl;
-    link.click();
-    setMessage("PNG exported.");
+      const fileLabel = composeMode === "summary" ? roundLabel || "round" : selectedFixture?.round_label || "fixture";
+      const link = document.createElement("a");
+      link.download = `${fileLabel}-${selectedTemplate.component_key}-${templateOptions.aspectRatio}`
+        .toLowerCase()
+        .replace(/\s+/g, "-") + ".png";
+      link.href = dataUrl;
+      link.click();
+      setMessage("PNG exported.");
+    } catch (error) {
+      console.error("[social.exportPng] Failed export:", error);
+      setMessage("Export failed. Try a different template/background and export again.");
+    }
   };
 
   const savePost = async (status: PostStatus) => {
@@ -340,8 +357,14 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       generated_by: null
     });
 
+    if (error) {
+      console.error("[social.savePost] Failed save:", error.message);
+      setMessage(getFriendlyWriteError(error.message));
+      return;
+    }
+
     setCaption(captionToSave);
-    setMessage(error ? error.message : `Saved as ${status}.`);
+    setMessage(`Saved as ${status}.`);
   };
 
   const quickTemplateHint = selectedTemplate ? `${selectedTemplate.name} | ${templateOptions.aspectRatio}` : "Select fixture";
@@ -453,7 +476,11 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                 </button>
               </li>
             ))}
-            {!filteredFixtures.length ? <li className="text-sm text-command-muted">No fixtures found for current filters.</li> : null}
+            {!filteredFixtures.length ? (
+              <li className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-3 text-sm text-yellow-100">
+                No fixtures available for these filters. If this looks wrong, check Supabase data access and fixture status values.
+              </li>
+            ) : null}
           </ul>
         ) : (
           <label className="mt-4 block space-y-1">

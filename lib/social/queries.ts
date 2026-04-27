@@ -4,7 +4,11 @@ import type { FixtureRecord, MediaAssetRecord, SocialPostDraftRecord, SocialPost
 
 export async function getClubId() {
   const supabase = createClient();
-  const { data } = await supabase.from("clubs").select("id").order("created_at", { ascending: true }).limit(1).single();
+  const { data, error } = await supabase.from("clubs").select("id").order("created_at", { ascending: true }).limit(1).single();
+  if (error) {
+    console.error("[queries.getClubId] Failed to load club id:", error.message);
+    return null;
+  }
   return data?.id ?? null;
 }
 
@@ -24,7 +28,11 @@ export async function getFixtures(stream: Stream = "all"): Promise<FixtureRecord
     .eq("club_id", clubId)
     .order("fixture_date", { ascending: true });
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) {
+    console.error("[queries.getFixtures] Failed to load fixtures:", error.message);
+    return [];
+  }
   const fixtures: FixtureRecord[] = (data ?? []).map((row: any) => ({
     id: row.id,
     club_id: row.club_id,
@@ -60,12 +68,17 @@ export async function getTemplates(): Promise<TemplateRecord[]> {
     return [];
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("social_templates")
     .select("id, name, post_type, component_key, is_active")
     .eq("club_id", clubId)
     .eq("is_active", true)
     .order("name", { ascending: true });
+
+  if (error) {
+    console.error("[queries.getTemplates] Failed to load templates:", error.message);
+    return [];
+  }
 
   return (data ?? []) as TemplateRecord[];
 }
@@ -78,11 +91,16 @@ export async function getMediaAssets(): Promise<MediaAssetRecord[]> {
     return [];
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("media_assets")
     .select("id, file_path, media_type, alt_text, storage_bucket, created_at")
     .eq("club_id", clubId)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[queries.getMediaAssets] Failed to load media assets:", error.message);
+    return [];
+  }
 
   return (data ?? []) as MediaAssetRecord[];
 }
@@ -95,11 +113,16 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
     return [];
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("social_posts")
     .select("id, post_type, caption, status, image_path, created_at, fixtures(round_label, opponent_name), social_templates(name)")
     .eq("club_id", clubId)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[queries.getSocialPosts] Failed to load social posts:", error.message);
+    return [];
+  }
 
   return (data ?? []).map((row: any) => ({
     id: row.id,
@@ -115,11 +138,16 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
 
 export async function getSocialPostDraftById(id: string): Promise<SocialPostDraftRecord | null> {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("social_posts")
     .select("id, fixture_id, template_id, post_type, caption, status, fixtures(round_label)")
     .eq("id", id)
     .single();
+
+  if (error) {
+    console.error("[queries.getSocialPostDraftById] Failed to load draft:", error.message, "id:", id);
+    return null;
+  }
 
   if (!data) {
     return null;

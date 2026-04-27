@@ -39,7 +39,12 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
     });
 
     if (uploadError) {
-      setMessage(uploadError.message);
+      console.error("[media.upload] Storage upload failed:", uploadError.message);
+      if (uploadError.message.toLowerCase().includes("row-level security")) {
+        setMessage("Upload blocked by permissions. Sign in with an authorised account and try again.");
+      } else {
+        setMessage("Upload failed. Check file type/size and try again.");
+      }
       setIsUploading(false);
       return;
     }
@@ -57,7 +62,12 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
       .single();
 
     if (insertError) {
-      setMessage(insertError.message);
+      console.error("[media.upload] media_assets insert failed:", insertError.message);
+      if (insertError.message.toLowerCase().includes("row-level security")) {
+        setMessage("Upload saved to storage but metadata insert was blocked by permissions.");
+      } else {
+        setMessage("Upload succeeded but metadata save failed. Try again.");
+      }
       setIsUploading(false);
       return;
     }
