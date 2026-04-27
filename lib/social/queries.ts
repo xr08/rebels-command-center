@@ -340,7 +340,7 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
 
   const { data, error } = await supabase
     .from("social_posts")
-    .select("id, fixture_id, post_type, caption, status, image_path, created_at, social_templates(name)")
+    .select("id, fixture_id, post_type, custom_post_type, custom_payload, caption, status, image_path, created_at, social_templates(name)")
     .eq("club_id", clubId)
     .order("created_at", { ascending: false });
 
@@ -363,7 +363,8 @@ export async function getSocialPosts(): Promise<SocialPostHistoryRecord[]> {
 
     return {
     id: row.id,
-    post_type: row.post_type,
+    post_type: row.custom_post_type ?? row.post_type,
+    custom_post_type: row.custom_post_type ?? null,
     caption: row.caption,
     status: row.status,
     image_path: row.image_path,
@@ -381,7 +382,7 @@ export async function getSocialPostDraftById(id: string): Promise<SocialPostDraf
   const supabase = createClient();
   const { data, error } = await supabase
     .from("social_posts")
-    .select("id, fixture_id, template_id, post_type, caption, status")
+    .select("id, fixture_id, template_id, post_type, custom_post_type, custom_payload, caption, status")
     .eq("id", id)
     .single();
 
@@ -407,7 +408,9 @@ export async function getSocialPostDraftById(id: string): Promise<SocialPostDraf
     id: data.id,
     fixture_id: data.fixture_id,
     template_id: data.template_id,
-    post_type: data.post_type,
+    post_type: data.custom_post_type ?? data.post_type,
+    custom_post_type: data.custom_post_type ?? null,
+    custom_payload: data.custom_payload ?? null,
     caption: data.caption,
     status: data.status,
     fixtures: fixtureContext

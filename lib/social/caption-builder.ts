@@ -1,4 +1,5 @@
 import type { TemplateFixtureProps } from "@/types/social-data";
+import type { CustomPostType } from "@/types/social";
 
 function streamTag(stream?: TemplateFixtureProps["stream"]) {
   if (stream === "womens") {
@@ -125,4 +126,85 @@ ${fixtureCount} completed fixtures across ${streamText}.
 ${line}
 #${clubName.replace(/\s+/g, "")}
 #FremantleRebels #RoundResults`;
+}
+
+export function buildCustomCaption(
+  type: CustomPostType,
+  payload: {
+    title?: string;
+    bodyText?: string;
+    date?: string;
+    time?: string;
+    location?: string;
+    ctaText?: string;
+    personName?: string;
+    sponsorName?: string;
+    stream?: "mens" | "womens" | "juniors" | "all";
+  },
+  clubName: string
+) {
+  const streamHash = payload.stream && payload.stream !== "all" ? ` ${streamTag(payload.stream)}` : "";
+  const whenWhere = [payload.date, payload.time, payload.location].filter(Boolean).join(" | ");
+  const baseTitle = payload.title || "Club Update";
+
+  if (type === "player_of_the_day") {
+    return `Player of the Day: ${payload.personName || baseTitle}
+${payload.bodyText || "Outstanding effort for the Rebels today."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Drop a comment to celebrate this performance."}
+#FremantleRebels #PlayerOfTheDay${streamHash}`;
+  }
+
+  if (type === "sponsor_highlight") {
+    return `Sponsor Highlight: ${payload.sponsorName || baseTitle}
+${payload.bodyText || "Thank you for backing the Rebels community."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Support the businesses that support our club."}
+#FremantleRebels #SponsorHighlight`;
+  }
+
+  if (type === "training_reminder") {
+    return `Training Reminder: ${baseTitle}
+${payload.bodyText || "Sessions are locked in this week."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Bring water and arrive ready to go."}
+#FremantleRebels #Training${streamHash}`;
+  }
+
+  if (type === "event_announcement") {
+    return `Club Event: ${baseTitle}
+${payload.bodyText || "Join the Rebels for this event."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "See you there."}
+#FremantleRebels #ClubEvent`;
+  }
+
+  if (type === "photo_highlight") {
+    return `Photo Highlight: ${baseTitle}
+${payload.bodyText || "Another great moment for the Rebels."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Tag your teammates."}
+#FremantleRebels #PhotoHighlight${streamHash}`;
+  }
+
+  if (type === "manual_info_card") {
+    return `${baseTitle}
+${payload.bodyText || "Important club information."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Please share with your team."}
+#${clubName.replace(/\s+/g, "")} #FremantleRebels`;
+  }
+
+  return `Club Announcement: ${baseTitle}
+${payload.bodyText || "Latest update from the Rebels."}
+${whenWhere ? `\n${whenWhere}` : ""}
+
+${payload.ctaText || "Stay tuned for more updates."}
+#${clubName.replace(/\s+/g, "")} #FremantleRebels`;
 }

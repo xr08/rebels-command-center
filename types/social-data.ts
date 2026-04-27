@@ -1,4 +1,4 @@
-import type { PostType } from "./social";
+import type { CustomPostType, PostType } from "./social";
 
 export type FixtureRecord = {
   id: string;
@@ -25,7 +25,7 @@ export type FixtureRecord = {
 export type TemplateRecord = {
   id: string;
   name: string;
-  post_type: PostType;
+  post_type: PostType | CustomPostType;
   component_key: string;
   is_active: boolean;
 };
@@ -43,7 +43,8 @@ export type MediaAssetRecord = {
 
 export type SocialPostHistoryRecord = {
   id: string;
-  post_type: PostType;
+  post_type: PostType | CustomPostType;
+  custom_post_type?: CustomPostType | null;
   caption: string;
   status: "draft" | "posted";
   image_path: string | null;
@@ -77,11 +78,33 @@ export type TemplateOptions = {
   backgroundImageUrl?: string | null;
 };
 
+export type CustomPostFormData = {
+  heading: string;
+  subheading: string;
+  title: string;
+  bodyText: string;
+  date: string;
+  time: string;
+  location: string;
+  ctaText: string;
+  personName: string;
+  sponsorName: string;
+  stream: "mens" | "womens" | "juniors" | "all";
+  selectedMediaId: string;
+  selectedLogoId: string;
+};
+
+export type CustomTemplateData = CustomPostFormData & {
+  postType: CustomPostType;
+};
+
 export type SocialPostDraftRecord = {
   id: string;
-  fixture_id: string;
-  template_id: string;
-  post_type: PostType;
+  fixture_id: string | null;
+  template_id: string | null;
+  post_type: PostType | CustomPostType;
+  custom_post_type?: CustomPostType | null;
+  custom_payload?: Partial<CustomPostFormData> | null;
   caption: string;
   status: "draft" | "posted";
   fixtures?: {
