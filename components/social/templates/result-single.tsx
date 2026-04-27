@@ -27,14 +27,14 @@ export function ResultSingleTemplate({ data, options, brand }: Props) {
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">Rebels</p>
-            <p className="mt-2 text-3xl font-black md:text-4xl">{(data.score ?? "-").split("-")[0] ?? "-"}</p>
+            <p className="mt-2 text-3xl font-black md:text-4xl">{data.isBye ? "BYE" : (data.score ?? "-").split("-")[0] ?? "-"}</p>
           </div>
           <p className="text-3xl font-black" style={{ color: brand.accentColor || "#FFCD00" }}>
-            -
+            {data.isBye ? "|" : "-"}
           </p>
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">{data.opponent}</p>
-            <p className="mt-2 text-3xl font-black md:text-4xl">{(data.score ?? "-").split("-")[1] ?? "-"}</p>
+            <p className="mt-2 text-3xl font-black md:text-4xl">{data.isBye ? "BYE" : (data.score ?? "-").split("-")[1] ?? "-"}</p>
           </div>
         </div>
 

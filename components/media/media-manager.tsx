@@ -23,7 +23,9 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
 
     return filtered.map((asset) => ({
       ...asset,
-      publicUrl: supabase.storage.from(asset.storage_bucket).getPublicUrl(asset.file_path).data.publicUrl
+      publicUrl: asset.storage_bucket && asset.file_path
+        ? supabase.storage.from(asset.storage_bucket).getPublicUrl(asset.file_path).data.publicUrl
+        : null
     }));
   }, [media, supabase, typeFilter]);
 
@@ -141,7 +143,7 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
           <article key={asset.id} className="glass-panel rounded-xl p-3">
             <div className="aspect-video overflow-hidden rounded-lg border border-white/10 bg-black/20">
               {asset.publicUrl ? (
-                <Image src={asset.publicUrl} alt={asset.alt_text ?? asset.file_path} width={640} height={360} className="h-full w-full object-cover" />
+                <Image src={asset.publicUrl} alt={asset.alt_text ?? asset.file_path ?? "Media asset"} width={640} height={360} className="h-full w-full object-cover" />
               ) : null}
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
@@ -150,7 +152,7 @@ export function MediaManager({ initialMedia, clubId }: { initialMedia: MediaAsse
               </p>
               <p className="text-[10px] text-command-muted">{new Date(asset.created_at).toLocaleDateString("en-AU")}</p>
             </div>
-            <p className="mt-1 truncate text-sm font-semibold">{asset.file_path}</p>
+            <p className="mt-1 truncate text-sm font-semibold">{asset.file_path ?? "External media"}</p>
             <p className="mt-1 text-xs text-command-muted">{asset.alt_text ?? "No alt text"}</p>
           </article>
         ))}

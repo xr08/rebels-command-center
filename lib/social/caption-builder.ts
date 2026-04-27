@@ -16,6 +16,14 @@ function pickVariant(seed: string, variants: string[]) {
 }
 
 export function buildPreviewCaption(data: TemplateFixtureProps, clubName: string) {
+  if (data.isBye) {
+    return `${data.round}: ${data.teamName ?? "Rebels"} have the BYE
+Next fixture details coming soon.
+
+${clubName} stay ready for the next challenge.
+#FremantleRebels ${streamTag(data.stream)}`;
+  }
+
   const audienceBase =
     data.stream === "womens"
       ? "Our Womens squad is ready to set the tempo."
@@ -39,10 +47,18 @@ ${clubName} are set for game day.
 }
 
 export function buildResultCaption(data: TemplateFixtureProps, clubName: string) {
+  if (data.isBye) {
+    return `${data.round}: ${data.teamName ?? "Rebels"} | BYE
+No match result this round.
+
+${clubName} reset and prepare for next week.
+#FremantleRebels #MatchResult ${streamTag(data.stream)}`;
+  }
+
   const scoreLine = data.score ? `Score: ${data.score}` : "Full Time";
   const outcomeBase =
     data.resultOutcome === "win"
-      ? "Big win for the Rebels."
+      ? "Big win for Rebels."
       : data.resultOutcome === "loss"
         ? "Tough result, we regroup and go again."
         : data.resultOutcome === "draw"
@@ -51,8 +67,8 @@ export function buildResultCaption(data: TemplateFixtureProps, clubName: string)
 
   const outcomeLine = pickVariant(`${data.round}-${data.score}-${data.resultOutcome}`, [
     outcomeBase,
-    `${data.teamName ?? "Rebels"} gave everything until the final whistle.`,
-    "Strong effort from the group across all four quarters."
+    `${data.teamName ?? "Rebels"} gave it everything until the last innings.`,
+    "Strong effort from the group across all digs"
   ]);
 
   return `${data.round}: ${data.teamName ?? "Rebels"} vs ${data.opponent}
@@ -79,7 +95,7 @@ export function buildPreviewSummaryCaption(
 ) {
   const streamText = stream === "all" ? "all Rebels squads" : `${stream} squad`;
   const line = pickVariant(`${round}-${stream}-${fixtureCount}`, [
-    "Big weekend ahead for the Rebels.",
+    "Big weekend ahead for Rebels.",
     "A huge round is loading for the club.",
     "Plenty of action coming up this round."
   ]);
@@ -101,7 +117,7 @@ export function buildResultSummaryCaption(
   const line = pickVariant(`${round}-${stream}-${fixtureCount}-results`, [
     "Strong effort right across the club.",
     "Another demanding round completed.",
-    "Solid work from every Rebels squad."
+    "Solid work from every Rebels team."
   ]);
   return `${round} results are in.
 ${fixtureCount} completed fixtures across ${streamText}.

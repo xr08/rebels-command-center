@@ -23,9 +23,41 @@ function groupByStream(fixtures: FixtureRecord[]) {
   }, {});
 }
 
+function getDivisionTag(teamName?: string) {
+  if (!teamName) {
+    return "";
+  }
+  const match = teamName.match(/div\s*\d+[a-z]?/i);
+  return match ? match[0].toUpperCase() : "";
+}
+
+function getOpponentShortName(opponent: string, isBye?: boolean) {
+  if (isBye) {
+    return "BYE";
+  }
+  const [firstWord] = opponent.trim().split(/\s+/);
+  return firstWord || opponent;
+}
+
+function getFixtureTitle(fixture: FixtureRecord) {
+  if (fixture.is_bye) {
+    return `${fixture.teams?.name ?? "Rebels"} | BYE`;
+  }
+  const div = getDivisionTag(fixture.teams?.name);
+  const opponent = getOpponentShortName(fixture.opponent_name, fixture.is_bye);
+  return `${div ? `${div} ` : ""}Rebels v ${opponent}`.trim();
+}
+
 export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props) {
   const round = fixtures[0]?.round_label ?? "Round Preview";
   const grouped = groupByStream(fixtures);
+  const streamEntries = Object.entries(grouped);
+  const maxStreams = options.aspectRatio === "portrait" ? 4 : 3;
+  const maxPerStream = options.aspectRatio === "portrait" ? 5 : 3;
+  const visibleEntries = streamEntries.slice(0, maxStreams);
+  const hiddenByStream = streamEntries.slice(maxStreams).reduce((sum, [, list]) => sum + list.length, 0);
+  const hiddenWithinVisible = visibleEntries.reduce((sum, [, list]) => sum + Math.max(0, list.length - maxPerStream), 0);
+  const hiddenCount = hiddenByStream + hiddenWithinVisible;
 
   return (
     <TemplateFrame
@@ -38,17 +70,22 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
       options={options}
     >
       <div className="space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
-        {Object.entries(grouped).map(([stream, streamFixtures]) => (
+        {visibleEntries.map(([stream, streamFixtures]) => (
           <section key={stream} className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">{stream}</p>
-            {streamFixtures.slice(0, options.aspectRatio === "portrait" ? 7 : 5).map((fixture) => (
+            {streamFixtures.slice(0, maxPerStream).map((fixture) => (
               <div key={fixture.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                <span className="font-semibold">{fixture.teams?.name ?? "Rebels"} vs {fixture.opponent_name}</span>
-                <span className="text-xs text-command-accent">{new Date(fixture.fixture_date).toLocaleDateString("en-AU")}</span>
+                <span className="truncate font-semibold">{getFixtureTitle(fixture)}</span>
+                <span className="max-w-[45%] truncate text-xs text-command-accent">
+                  {fixture.is_bye ? "BYE" : `${fixture.home_or_away ?? "TBC"} | ${fixture.venue}`}
+                </span>
               </div>
             ))}
           </section>
         ))}
+        {hiddenCount > 0 ? (
+          <p className="text-center text-xs uppercase tracking-[0.14em] text-white/65">+ {hiddenCount} more fixtures</p>
+        ) : null}
       </div>
     </TemplateFrame>
   );

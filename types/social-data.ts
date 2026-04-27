@@ -12,6 +12,10 @@ export type FixtureRecord = {
   home_score: number | null;
   away_score: number | null;
   result_outcome: string | null;
+  is_bye?: boolean;
+  home_or_away?: "Home" | "Away" | "BYE" | null;
+  source?: string | null;
+  notes?: string | null;
   teams?: {
     name: string;
     stream: string;
@@ -28,10 +32,12 @@ export type TemplateRecord = {
 
 export type MediaAssetRecord = {
   id: string;
-  file_path: string;
+  file_path?: string;
+  url?: string;
+  thumbnail_url?: string | null;
   media_type: string;
   alt_text: string | null;
-  storage_bucket: string;
+  storage_bucket?: string;
   created_at: string;
 };
 
@@ -59,6 +65,7 @@ export type TemplateFixtureProps = {
   venue: string;
   score?: string | null;
   teamName?: string;
+  isBye?: boolean;
   stream?: "mens" | "womens" | "juniors" | "all";
   resultOutcome?: "win" | "loss" | "draw" | null;
 };
@@ -80,4 +87,8 @@ export type SocialPostDraftRecord = {
   fixtures?: {
     round_label: string;
   } | null;
+};
+
+export type SourceLoadState = {
+  issues: string[];
 };

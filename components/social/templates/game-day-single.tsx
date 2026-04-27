@@ -30,10 +30,10 @@ export function GameDaySingleTemplate({ data, options, brand }: Props) {
             <p className="mt-2 text-2xl font-black md:text-3xl">{data.teamName ?? "Rebels"}</p>
           </div>
           <p className="text-xl font-black" style={{ color: brand.accentColor || "#FFCD00" }}>
-            VS
+            {data.isBye ? "|" : "VS"}
           </p>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">Opponent</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">{data.isBye ? "Status" : "Opponent"}</p>
             <p className="mt-2 text-2xl font-black md:text-3xl">{data.opponent}</p>
           </div>
         </div>

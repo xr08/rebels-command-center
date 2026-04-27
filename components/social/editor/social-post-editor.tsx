@@ -1,6 +1,5 @@
-﻿"use client";
+"use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { SocialPreview } from "@/components/social/preview/social-preview";
@@ -14,6 +13,7 @@ import type {
   FixtureRecord,
   MediaAssetRecord,
   SocialPostDraftRecord,
+  SourceLoadState,
   TemplateFixtureProps,
   TemplateOptions,
   TemplateRecord
@@ -25,6 +25,7 @@ type Props = {
   templates: TemplateRecord[];
   mediaAssets: MediaAssetRecord[];
   initialDraft: SocialPostDraftRecord | null;
+  sourceState: SourceLoadState;
   brand: {
     clubId: string;
     clubName: string;
@@ -85,12 +86,13 @@ function toTemplateData(fixture: FixtureRecord | null): TemplateFixtureProps | n
   const score = fixture.home_score !== null && fixture.away_score !== null ? `${fixture.home_score}-${fixture.away_score}` : null;
 
   return {
-    opponent: fixture.opponent_name,
+    opponent: fixture.is_bye ? "BYE" : fixture.opponent_name,
     round: fixture.round_label,
     date,
-    time,
+    time: fixture.is_bye ? "BYE" : time,
     venue: fixture.venue,
     score,
+    isBye: fixture.is_bye ?? false,
     teamName: fixture.teams?.name ?? "Rebels",
     stream: (fixture.teams?.stream as TemplateFixtureProps["stream"]) ?? "all",
     resultOutcome: inferResultOutcome(fixture)
@@ -112,7 +114,7 @@ function getFriendlyWriteError(rawMessage: string) {
   return "Couldn't save right now. Please try again.";
 }
 
-export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, brand }: Props) {
+export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, sourceState, brand }: Props) {
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
   const [viewMode, setViewMode] = useState<"upcoming" | "results">("upcoming");
@@ -214,7 +216,12 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     const supabase = createClient();
     return imageAssets.map((asset) => ({
       ...asset,
-      publicUrl: supabase.storage.from(asset.storage_bucket).getPublicUrl(asset.file_path).data.publicUrl
+      publicUrl:
+        asset.thumbnail_url ??
+        asset.url ??
+        (asset.storage_bucket && asset.file_path
+          ? supabase.storage.from(asset.storage_bucket).getPublicUrl(asset.file_path).data.publicUrl
+          : null)
     }));
   }, [imageAssets]);
 
@@ -470,15 +477,17 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                 >
                   <p className="text-xs text-command-muted">{fixture.round_label}</p>
                   <p className="text-sm font-semibold">
-                    {fixture.teams?.name ?? "Rebels"} vs {fixture.opponent_name}
+                    {fixture.is_bye ? `${fixture.teams?.name ?? "Rebels"} | BYE` : `${fixture.teams?.name ?? "Rebels"} vs ${fixture.opponent_name}`}
                   </p>
-                  <p className="text-xs text-command-muted">{new Date(fixture.fixture_date).toLocaleString("en-AU")}</p>
+                  <p className="text-xs text-command-muted">
+                    {fixture.is_bye ? "BYE" : `${fixture.home_or_away ?? "TBC"} | ${fixture.venue}`}
+                  </p>
                 </button>
               </li>
             ))}
             {!filteredFixtures.length ? (
               <li className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-3 text-sm text-yellow-100">
-                No fixtures available for these filters. If this looks wrong, check Supabase data access and fixture status values.
+                No fixtures available for these filters. If this looks wrong, check source Supabase access and fixture status values.
               </li>
             ) : null}
           </ul>
@@ -498,6 +507,17 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       </aside>
 
       <section className="space-y-4 pb-24 md:pb-4">
+        {sourceState.issues.length ? (
+          <div className="rounded-xl border border-yellow-400/40 bg-yellow-400/10 p-3 text-xs text-yellow-100">
+            <p className="font-semibold uppercase tracking-[0.12em]">Source Data Notice</p>
+            <ul className="mt-2 space-y-1">
+              {sourceState.issues.slice(0, 4).map((issue) => (
+                <li key={issue}>- {issue}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
         <div className="glass-panel rounded-2xl p-4">
           <h3 className="text-lg font-semibold">Post Setup</h3>
           <p className="mt-1 text-sm text-command-muted">{quickTemplateHint}</p>
@@ -552,10 +572,15 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                       type="button"
                       onClick={() => setBackgroundAssetId(asset.id)}
                       className={`overflow-hidden rounded-md border ${backgroundAssetId === asset.id ? "border-command-accent" : "border-white/15"}`}
-                      title={asset.alt_text || asset.file_path}
+                      title={asset.alt_text || asset.file_path || asset.url || "Background"}
                     >
                       <div className="aspect-square bg-black/20">
-                        <Image src={asset.publicUrl} alt={asset.alt_text || asset.file_path} width={320} height={320} className="h-full w-full object-cover" />
+                        {asset.publicUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={asset.publicUrl} alt={asset.alt_text || asset.file_path || "Background image"} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[10px] text-command-muted">No preview</div>
+                        )}
                       </div>
                     </button>
                   ))}
