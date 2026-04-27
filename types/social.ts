@@ -12,3 +12,11 @@ export type CustomPostType =
   | "manual_info_card";
 
 export type PostStatus = "draft" | "posted";
+
+export type StyleVariant =
+  | "classic-green"
+  | "photo-overlay"
+  | "bold-gold"
+  | "minimal-board"
+  | "juniors-energy"
+  | "sponsor-clean";

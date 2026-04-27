@@ -13,6 +13,17 @@ type Props = {
 };
 
 export function GameDaySingleTemplate({ data, options, brand }: Props) {
+  const styleVariant = options.styleVariant ?? "classic-green";
+  const cardClass = styleVariant === "minimal-board"
+    ? "space-y-4 rounded-2xl border border-white/30 bg-black/20 p-4 md:p-5"
+    : styleVariant === "bold-gold"
+      ? "space-y-4 rounded-2xl border border-black/15 bg-white/20 p-4 backdrop-blur-sm md:p-5"
+      : "space-y-4 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5";
+  const infoCardClass = styleVariant === "bold-gold"
+    ? "rounded-lg border border-black/15 bg-white/30 px-3 py-2"
+    : "rounded-lg border border-white/15 bg-white/5 px-3 py-2";
+  const textClass = styleVariant === "bold-gold" ? "text-black" : "text-white";
+
   return (
     <TemplateFrame
       title="Game Day"
@@ -23,8 +34,8 @@ export function GameDaySingleTemplate({ data, options, brand }: Props) {
       logoPath={brand.logoPath}
       options={options}
     >
-      <div className="space-y-4 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
+      <div className={cardClass}>
+        <div className={`grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center ${textClass}`}>
           <div>
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">Home</p>
             <p className="mt-2 text-2xl font-black md:text-3xl">{data.teamName ?? "Rebels"}</p>
@@ -39,21 +50,31 @@ export function GameDaySingleTemplate({ data, options, brand }: Props) {
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm md:text-base">
-          <InfoRow label="Date" value={data.date} />
-          <InfoRow label="Time" value={data.time} />
-          <InfoRow label="Round" value={data.round} />
-          <InfoRow label="Venue" value={data.venue} />
+          <InfoRow label="Date" value={data.date} className={infoCardClass} valueClass={textClass} />
+          <InfoRow label="Time" value={data.time} className={infoCardClass} valueClass={textClass} />
+          <InfoRow label="Round" value={data.round} className={infoCardClass} valueClass={textClass} />
+          <InfoRow label="Venue" value={data.venue} className={infoCardClass} valueClass={textClass} />
         </div>
       </div>
     </TemplateFrame>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  className,
+  valueClass
+}: {
+  label: string;
+  value: string;
+  className: string;
+  valueClass: string;
+}) {
   return (
-    <div className="rounded-lg border border-white/15 bg-white/5 px-3 py-2">
+    <div className={className}>
       <p className="text-[10px] uppercase tracking-[0.16em] text-white/70">{label}</p>
-      <p className="mt-1 font-semibold text-white">{value}</p>
+      <p className={`mt-1 font-semibold ${valueClass}`}>{value}</p>
     </div>
   );
 }

@@ -97,16 +97,26 @@ function getMatchLabel(fixture: FixtureRecord) {
   const opponent = formatSummaryName(fixture.opponent_name) || fixture.opponent_name;
   const side = fixture.home_or_away ?? "TBC";
   return {
-    compact: `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`,
-    full: `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} · ${formatFixtureTime(fixture.fixture_date)} · ${side}`
+    compact: `${teamLabel} v ${opponent} | ${formatFixtureTime(fixture.fixture_date)} | ${side}`,
+    full: `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} | ${formatFixtureTime(fixture.fixture_date)} | ${side}`
   };
 }
 
 export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props) {
+  const styleVariant = options.styleVariant ?? "classic-green";
   const round = fixtures[0]?.round_label ?? "Round Preview";
   const grouped = groupByStream(fixtures);
   const streamEntries = Object.entries(grouped);
   const dateLabel = formatRoundDateRange(fixtures);
+  const panelClass = styleVariant === "minimal-board"
+    ? "space-y-3 rounded-2xl border border-white/30 bg-black/20 p-4 md:p-5"
+    : styleVariant === "bold-gold"
+      ? "space-y-3 rounded-2xl border border-black/15 bg-white/20 p-4 backdrop-blur-sm md:p-5"
+      : "space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5";
+  const rowClass = styleVariant === "bold-gold"
+    ? "grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-black/10 bg-white/30 px-3 py-2 text-sm"
+    : "grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm";
+  const rowTextClass = styleVariant === "bold-gold" ? "truncate font-semibold text-black" : "truncate font-semibold text-white";
 
   return (
     <TemplateFrame
@@ -118,7 +128,7 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
       logoPath={brand.logoPath}
       options={options}
     >
-      <div className="space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
+      <div className={panelClass}>
         {streamEntries.map(([stream, streamFixtures]) => (
           <section key={stream} className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
@@ -127,8 +137,8 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
             {streamFixtures.map((fixture) => {
               const label = getMatchLabel(fixture);
               return (
-                <div key={fixture.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                  <span className="truncate font-semibold text-white" title={label.full} aria-label={label.full}>
+                <div key={fixture.id} className={rowClass}>
+                  <span className={rowTextClass} title={label.full} aria-label={label.full}>
                     {label.compact}
                   </span>
                   {fixture.is_bye ? <span className="text-xs text-command-accent">BYE</span> : <span />}

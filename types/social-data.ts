@@ -1,4 +1,4 @@
-import type { CustomPostType, PostType } from "./social";
+import type { CustomPostType, PostType, StyleVariant } from "./social";
 
 export type FixtureRecord = {
   id: string;
@@ -27,6 +27,7 @@ export type TemplateRecord = {
   name: string;
   post_type: PostType | CustomPostType;
   component_key: string;
+  default_style_variant?: StyleVariant | null;
   is_active: boolean;
 };
 
@@ -75,6 +76,7 @@ export type TemplateOptions = {
   aspectRatio: "square" | "portrait";
   showSponsorStrip: boolean;
   showLogo: boolean;
+  styleVariant: StyleVariant;
   backgroundImageUrl?: string | null;
   exportMode?: boolean;
 };

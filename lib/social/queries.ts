@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSourceEnv, getSourceSupabaseClient } from "@/lib/supabase/source-client";
+import { normalizeStyleVariant } from "@/lib/social/style-variants";
 import type { Stream } from "@/types/social";
 import type { FixtureRecord, MediaAssetRecord, SocialPostDraftRecord, SocialPostHistoryRecord, TemplateRecord } from "@/types/social-data";
 
@@ -295,7 +296,7 @@ export async function getTemplates(): Promise<TemplateRecord[]> {
 
   const { data, error } = await supabase
     .from("social_templates")
-    .select("id, name, post_type, component_key, is_active")
+    .select("id, name, post_type, component_key, default_style_variant, is_active")
     .eq("club_id", clubId)
     .eq("is_active", true)
     .order("name", { ascending: true });
@@ -305,7 +306,10 @@ export async function getTemplates(): Promise<TemplateRecord[]> {
     return [];
   }
 
-  return (data ?? []) as TemplateRecord[];
+  return (data ?? []).map((template: any) => ({
+    ...template,
+    default_style_variant: normalizeStyleVariant(template.default_style_variant)
+  })) as TemplateRecord[];
 }
 
 export async function getMediaAssets(): Promise<MediaAssetRecord[]> {

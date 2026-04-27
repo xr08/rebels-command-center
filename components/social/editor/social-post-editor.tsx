@@ -9,8 +9,9 @@ import {
   buildPreviewSummaryCaption,
   buildResultSummaryCaption
 } from "@/lib/social/caption-builder";
+import { STYLE_VARIANT_LABELS, STYLE_VARIANTS, normalizeStyleVariant } from "@/lib/social/style-variants";
 import { createClient } from "@/lib/supabase/client";
-import type { CustomPostType, PostStatus, Stream } from "@/types/social";
+import type { CustomPostType, PostStatus, Stream, StyleVariant } from "@/types/social";
 import type {
   CustomPostFormData,
   CustomTemplateData,
@@ -157,6 +158,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const [caption, setCaption] = useState("");
   const [message, setMessage] = useState("");
   const [aspectRatio, setAspectRatio] = useState<TemplateOptions["aspectRatio"]>("square");
+  const [styleVariant, setStyleVariant] = useState<StyleVariant>("classic-green");
   const [showSponsorStrip, setShowSponsorStrip] = useState(true);
   const [showLogo, setShowLogo] = useState(true);
   const [backgroundAssetId, setBackgroundAssetId] = useState("");
@@ -322,6 +324,14 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     }
   }, [availableTemplates, templateId]);
 
+  useEffect(() => {
+    const selected = availableTemplates.find((template) => template.id === templateId);
+    if (!selected) {
+      return;
+    }
+    setStyleVariant(normalizeStyleVariant(selected.default_style_variant));
+  }, [availableTemplates, templateId]);
+
   const selectedFixture = filteredFixtures.find((fixture) => fixture.id === fixtureId) ?? null;
   const selectedTemplate = availableTemplates.find((template) => template.id === templateId) ?? null;
   const singleData = toTemplateData(selectedFixture);
@@ -340,6 +350,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     aspectRatio,
     showSponsorStrip,
     showLogo,
+    styleVariant,
     backgroundImageUrl: selectedBackgroundUrl
   };
 
@@ -624,7 +635,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                       <p className="text-sm font-semibold">
                         {fixture.is_bye
                           ? `${fixture.teams?.name ?? "Rebels"} | BYE`
-                          : `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} · ${formatFixtureTime(fixture.fixture_date)} · ${fixture.home_or_away ?? "TBC"}`}
+                          : `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} | ${formatFixtureTime(fixture.fixture_date)} | ${fixture.home_or_away ?? "TBC"}`}
                       </p>
                     </button>
                   </li>
@@ -715,6 +726,20 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
               <select value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as TemplateOptions["aspectRatio"])} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
                 <option value="square">Square</option>
                 <option value="portrait">Portrait</option>
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-xs text-command-muted">Style Variant</span>
+              <select
+                value={styleVariant}
+                onChange={(event) => setStyleVariant(event.target.value as StyleVariant)}
+                className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
+              >
+                {STYLE_VARIANTS.map((variant) => (
+                  <option key={variant} value={variant}>
+                    {STYLE_VARIANT_LABELS[variant]}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
