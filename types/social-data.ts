@@ -76,6 +76,7 @@ export type TemplateOptions = {
   showSponsorStrip: boolean;
   showLogo: boolean;
   backgroundImageUrl?: string | null;
+  exportMode?: boolean;
 };
 
 export type CustomPostFormData = {

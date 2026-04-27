@@ -17,10 +17,15 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
     aspectRatio: "square",
     showSponsorStrip: true,
     showLogo: true,
-    backgroundImageUrl: null
+    backgroundImageUrl: null,
+    exportMode: false
   };
 
-  const ratioClass = safeOptions.aspectRatio === "portrait" ? "aspect-[4/5] max-w-[500px]" : "aspect-square max-w-[560px]";
+  const ratioClass = safeOptions.exportMode
+    ? "h-full w-full max-w-none aspect-auto rounded-none"
+    : safeOptions.aspectRatio === "portrait"
+      ? "aspect-[4/5] max-w-[500px]"
+      : "aspect-square max-w-[560px]";
 
   return (
     <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 text-white shadow-premium ${ratioClass}`}>

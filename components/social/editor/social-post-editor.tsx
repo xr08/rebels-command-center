@@ -161,7 +161,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const [showLogo, setShowLogo] = useState(true);
   const [backgroundAssetId, setBackgroundAssetId] = useState("");
   const [customForm, setCustomForm] = useState<CustomPostFormData>(emptyCustomForm);
-  const previewRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!initialDraft) {
@@ -336,11 +336,16 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     }
     : null;
 
-  const templateOptions: TemplateOptions = {
+  const previewOptions: TemplateOptions = {
     aspectRatio,
     showSponsorStrip,
     showLogo,
     backgroundImageUrl: selectedBackgroundUrl
+  };
+
+  const exportOptions: TemplateOptions = {
+    ...previewOptions,
+    exportMode: true
   };
 
   const previewBrand = {
@@ -401,21 +406,26 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   };
 
   const exportPng = async () => {
-    if (!previewRef.current || !selectedTemplate) {
+    if (!exportRef.current || !selectedTemplate) {
       return;
     }
     try {
-      const { width, height } = getExportSize(templateOptions.aspectRatio);
-      const dataUrl = await toPng(previewRef.current, {
+      const { width, height } = getExportSize(exportOptions.aspectRatio);
+      const dataUrl = await toPng(exportRef.current, {
         cacheBust: true,
         pixelRatio: 2,
         width,
         height,
         canvasWidth: width,
         canvasHeight: height,
+        backgroundColor: brand.primaryColor || "#044229",
         style: {
           width: `${width}px`,
-          height: `${height}px`
+          height: `${height}px`,
+          margin: "0",
+          padding: "0",
+          overflow: "hidden",
+          background: brand.primaryColor || "#044229"
         }
       });
 
@@ -426,7 +436,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           : selectedFixture?.round_label || "fixture";
 
       const link = document.createElement("a");
-      link.download = `${fileLabel}-${selectedTemplate.component_key}-${templateOptions.aspectRatio}`
+      link.download = `${fileLabel}-${selectedTemplate.component_key}-${exportOptions.aspectRatio}`
         .toLowerCase()
         .replace(/\s+/g, "-") + ".png";
       link.href = dataUrl;
@@ -499,7 +509,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     setMessage(`Saved as ${status}.`);
   };
 
-  const quickTemplateHint = selectedTemplate ? `${selectedTemplate.name} | ${templateOptions.aspectRatio}` : "Select template";
+  const quickTemplateHint = selectedTemplate ? `${selectedTemplate.name} | ${previewOptions.aspectRatio}` : "Select template";
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
@@ -774,15 +784,36 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           ) : null}
         </div>
 
-        <div ref={previewRef} className="overflow-hidden rounded-2xl">
+        <div className="overflow-hidden rounded-2xl">
           <SocialPreview
             template={selectedTemplate}
             data={singleData}
             customData={customData}
             summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
-            options={templateOptions}
+            options={previewOptions}
             brand={previewBrand}
           />
+        </div>
+
+        <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">
+          <div
+            ref={exportRef}
+            style={{
+              width: `${getExportSize(aspectRatio).width}px`,
+              height: `${getExportSize(aspectRatio).height}px`,
+              overflow: "hidden",
+              background: brand.primaryColor || "#044229"
+            }}
+          >
+            <SocialPreview
+              template={selectedTemplate}
+              data={singleData}
+              customData={customData}
+              summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+              options={exportOptions}
+              brand={previewBrand}
+            />
+          </div>
         </div>
 
         <div className="glass-panel rounded-2xl p-4">
