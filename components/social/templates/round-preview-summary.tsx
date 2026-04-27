@@ -36,12 +36,53 @@ function formatStreamLabel(stream: string) {
   return "All";
 }
 
-function getDivisionTag(teamName?: string) {
-  if (!teamName) {
-    return "";
+function formatFixtureTime(value: string) {
+  return new Intl.DateTimeFormat("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(new Date(value)).toLowerCase();
+}
+
+function formatRoundDateRange(fixtures: FixtureRecord[]) {
+  const uniqueDates = Array.from(
+    new Set(
+      fixtures.map((fixture) => {
+        const d = new Date(fixture.fixture_date);
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      })
+    )
+  )
+    .map((key) => {
+      const [year, month, day] = key.split("-").map(Number);
+      return new Date(year, month, day);
+    })
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  if (uniqueDates.length === 0) {
+    return "Date TBC";
   }
-  const match = teamName.match(/div\s*\d+[a-z]?/i);
-  return match ? match[0].toUpperCase() : "";
+
+  if (uniqueDates.length === 1) {
+    return new Intl.DateTimeFormat("en-AU", {
+      weekday: "long",
+      day: "numeric",
+      month: "long"
+    }).format(uniqueDates[0]);
+  }
+
+  const start = new Intl.DateTimeFormat("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  }).format(uniqueDates[0]);
+  const end = new Intl.DateTimeFormat("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  }).format(uniqueDates[uniqueDates.length - 1]);
+
+  return `${start} - ${end}`;
 }
 
 function getOpponentShortName(opponent: string, isBye?: boolean) {
@@ -52,24 +93,25 @@ function getOpponentShortName(opponent: string, isBye?: boolean) {
   return firstWord || opponent;
 }
 
-function getFixtureParts(fixture: FixtureRecord) {
+function getMatchLabel(fixture: FixtureRecord) {
+  const teamLabel = fixture.teams?.name ?? "Rebels";
   if (fixture.is_bye) {
-    return { division: "BYE", matchup: `${fixture.teams?.name ?? "Rebels"} | BYE` };
+    return `${teamLabel} | BYE`;
   }
-  const div = getDivisionTag(fixture.teams?.name);
   const opponent = getOpponentShortName(fixture.opponent_name, fixture.is_bye);
-  return { division: div || "DIV", matchup: `Rebels v ${opponent}` };
+  return `${teamLabel} v ${opponent} · ${formatFixtureTime(fixture.fixture_date)}`;
 }
 
 export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props) {
   const round = fixtures[0]?.round_label ?? "Round Preview";
   const grouped = groupByStream(fixtures);
   const streamEntries = Object.entries(grouped);
+  const dateLabel = formatRoundDateRange(fixtures);
 
   return (
     <TemplateFrame
       title="Round Preview"
-      subtitle={`${round} | ${fixtures.length} fixtures`}
+      subtitle={`${round} | ${fixtures.length} Fixtures | ${dateLabel}`}
       clubName={brand.clubName}
       primaryColor={brand.primaryColor}
       accentColor={brand.accentColor}
@@ -82,19 +124,12 @@ export function RoundPreviewSummaryTemplate({ fixtures, options, brand }: Props)
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/70">
               {`${round} | ${formatStreamLabel(stream)} | ${streamFixtures.length} fixtures`}
             </p>
-            {streamFixtures.map((fixture) => {
-              const parts = getFixtureParts(fixture);
-              return (
+            {streamFixtures.map((fixture) => (
               <div key={fixture.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                <span className="truncate font-semibold">
-                  <span className="text-command-accent">{parts.division}</span>
-                  <span className="pl-2 text-white">{parts.matchup}</span>
-                </span>
-                <span className="text-xs text-command-accent">
-                  {fixture.is_bye ? "BYE" : fixture.home_or_away ?? "TBC"}
-                </span>
+                <span className="truncate font-semibold text-white">{getMatchLabel(fixture)}</span>
+                <span className="text-xs text-command-accent">{fixture.is_bye ? "BYE" : fixture.home_or_away ?? "TBC"}</span>
               </div>
-            )})}
+            ))}
           </section>
         ))}
       </div>

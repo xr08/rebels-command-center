@@ -46,12 +46,23 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
         <header className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-white/75">{clubName}</p>
+              <p
+                className="text-lg font-black uppercase tracking-[0.08em] md:text-xl"
+                style={{ color: accentColor }}
+              >
+                {clubName}
+              </p>
               <h3 className="mt-2 text-4xl font-black leading-[0.95] tracking-tight md:text-5xl">{title}</h3>
               <p className="mt-2 text-sm font-medium text-white/90 md:text-base">{subtitle}</p>
             </div>
             {safeOptions.showLogo && logoPath ? (
-              <Image src={logoPath} alt={clubName} width={76} height={76} className="h-[76px] w-[76px] rounded-full border border-white/20 bg-white/10 p-1.5" />
+              <Image
+                src={logoPath}
+                alt={clubName}
+                width={114}
+                height={114}
+                className="h-[96px] w-[96px] rounded-full border border-white/20 bg-white/10 p-1.5 md:h-[114px] md:w-[114px]"
+              />
             ) : null}
           </div>
 

@@ -45,14 +45,6 @@ const streamOptions: { label: string; value: Stream }[] = [
   { label: "Juniors", value: "juniors" }
 ];
 
-const postTypeOptions = [
-  { label: "All", value: "all" },
-  { label: "Preview", value: "preview" },
-  { label: "Result", value: "result" }
-] as const;
-
-type PostTypeFilter = (typeof postTypeOptions)[number]["value"];
-
 function inferResultOutcome(fixture: FixtureRecord): TemplateFixtureProps["resultOutcome"] {
   if (fixture.home_score === null || fixture.away_score === null) {
     return null;
@@ -114,12 +106,20 @@ function getFriendlyWriteError(rawMessage: string) {
   return "Couldn't save right now. Please try again.";
 }
 
+function formatFixtureTime(value: string) {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).format(date).toLowerCase();
+}
+
 export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, sourceState, brand }: Props) {
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
   const [viewMode, setViewMode] = useState<"upcoming" | "results">("upcoming");
   const [stream, setStream] = useState<Stream>("all");
-  const [postType, setPostType] = useState<PostTypeFilter>("all");
   const [fixtureId, setFixtureId] = useState("");
   const [roundLabel, setRoundLabel] = useState("");
   const [templateId, setTemplateId] = useState("");
@@ -149,10 +149,8 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
     if (initialDraft.post_type.startsWith("result")) {
       setViewMode("results");
-      setPostType("result");
     } else {
       setViewMode("upcoming");
-      setPostType("preview");
     }
   }, [initialDraft]);
 
@@ -189,12 +187,6 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       const isResult = template.post_type.startsWith("result");
       const isSummaryTemplate = template.post_type.endsWith("summary");
 
-      if (postType === "preview" && !isPreview) {
-        return false;
-      }
-      if (postType === "result" && !isResult) {
-        return false;
-      }
       if (viewMode === "upcoming" && !isPreview) {
         return false;
       }
@@ -203,7 +195,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       }
       return composeMode === "summary" ? isSummaryTemplate : !isSummaryTemplate;
     });
-  }, [templates, postType, viewMode, composeMode]);
+  }, [templates, viewMode, composeMode]);
 
   const imageAssets = useMemo(() => {
     return mediaAssets.filter((asset) => {
@@ -442,22 +434,11 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4">
           <label className="space-y-1">
             <span className="text-xs text-command-muted">Stream</span>
             <select value={stream} onChange={(event) => setStream(event.target.value as Stream)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
               {streamOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs text-command-muted">Post Type</span>
-            <select value={postType} onChange={(event) => setPostType(event.target.value as PostTypeFilter)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              {postTypeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -477,10 +458,9 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
                 >
                   <p className="text-xs text-command-muted">{fixture.round_label}</p>
                   <p className="text-sm font-semibold">
-                    {fixture.is_bye ? `${fixture.teams?.name ?? "Rebels"} | BYE` : `${fixture.teams?.name ?? "Rebels"} vs ${fixture.opponent_name}`}
-                  </p>
-                  <p className="text-xs text-command-muted">
-                    {fixture.is_bye ? "BYE" : fixture.home_or_away ?? "TBC"}
+                    {fixture.is_bye
+                      ? `${fixture.teams?.name ?? "Rebels"} | BYE`
+                      : `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} · ${formatFixtureTime(fixture.fixture_date)} · ${fixture.home_or_away ?? "TBC"}`}
                   </p>
                 </button>
               </li>

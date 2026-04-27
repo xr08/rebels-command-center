@@ -1,7 +1,7 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { SocialPostEditor } from "@/components/social/editor/social-post-editor";
 import { getBrandSettings } from "@/lib/branding/settings";
-import { getMediaAssets, getSocialPostDraftById, getSourceFixtures, getSourceMediaAssets, getTemplates } from "@/lib/social/queries";
+import { getMediaAssets, getSocialPostDraftById, getSourceFixtures, getTemplates } from "@/lib/social/queries";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,17 +12,15 @@ export default async function SocialPage({
   searchParams?: { draft?: string };
 }) {
   const draftId = searchParams?.draft;
-  const [fixtureResult, sourceMediaResult, commandMediaAssets, templates, brand, initialDraft] = await Promise.all([
+  const [fixtureResult, commandMediaAssets, templates, brand, initialDraft] = await Promise.all([
     getSourceFixtures("all"),
-    getSourceMediaAssets(),
     getMediaAssets(),
     getTemplates(),
     getBrandSettings(),
     draftId ? getSocialPostDraftById(draftId) : Promise.resolve(null)
   ]);
-  const mediaAssets = [...sourceMediaResult.data, ...commandMediaAssets];
   const sourceState = {
-    issues: Array.from(new Set([...fixtureResult.issues, ...sourceMediaResult.issues]))
+    issues: Array.from(new Set(fixtureResult.issues))
   };
 
   return (
@@ -33,7 +31,7 @@ export default async function SocialPage({
       <SocialPostEditor
         fixtures={fixtureResult.data}
         templates={templates}
-        mediaAssets={mediaAssets}
+        mediaAssets={commandMediaAssets}
         initialDraft={initialDraft}
         brand={brand}
         sourceState={sourceState}
