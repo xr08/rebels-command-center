@@ -79,6 +79,20 @@ export type TemplateOptions = {
   styleVariant: StyleVariant;
   backgroundImageUrl?: string | null;
   exportMode?: boolean;
+  customizations?: SocialTemplateCustomizations;
+};
+
+export type SocialTemplateCustomizations = {
+  headlineOverride?: string;
+  subheadingOverride?: string;
+  showVenue?: boolean;
+  showTime?: boolean;
+  showRound?: boolean;
+  showSponsorStrip?: boolean;
+  backgroundFit?: "cover" | "contain";
+  backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+  overlayStrength?: "none" | "light" | "medium" | "strong";
+  templateVariation?: string;
 };
 
 export type CustomPostFormData = {
@@ -101,13 +115,17 @@ export type CustomTemplateData = CustomPostFormData & {
   postType: CustomPostType;
 };
 
+export type SocialPostDraftPayload = Partial<CustomPostFormData> & {
+  customizations?: SocialTemplateCustomizations | null;
+};
+
 export type SocialPostDraftRecord = {
   id: string;
   fixture_id: string | null;
   template_id: string | null;
   post_type: PostType | CustomPostType;
   custom_post_type?: CustomPostType | null;
-  custom_payload?: Partial<CustomPostFormData> | null;
+  custom_payload?: SocialPostDraftPayload | null;
   caption: string;
   status: "draft" | "posted";
   fixtures?: {

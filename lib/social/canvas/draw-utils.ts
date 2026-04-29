@@ -221,7 +221,8 @@ export function drawImageCover(
   targetX: number,
   targetY: number,
   targetWidth: number,
-  targetHeight: number
+  targetHeight: number,
+  position: "center" | "top" | "bottom" | "left" | "right" = "center"
 ) {
   // @ts-expect-error width/height exists for supported canvas image sources.
   const sourceWidth = image.width as number;
@@ -238,11 +239,42 @@ export function drawImageCover(
 
   if (sourceRatio > targetRatio) {
     sw = sourceHeight * targetRatio;
-    sx = (sourceWidth - sw) / 2;
+    sx = position === "left" ? 0 : position === "right" ? sourceWidth - sw : (sourceWidth - sw) / 2;
   } else {
     sh = sourceWidth / targetRatio;
-    sy = (sourceHeight - sh) / 2;
+    sy = position === "top" ? 0 : position === "bottom" ? sourceHeight - sh : (sourceHeight - sh) / 2;
   }
 
   ctx.drawImage(image, sx, sy, sw, sh, targetX, targetY, targetWidth, targetHeight);
+}
+
+export function drawImageContain(
+  ctx: CanvasRenderingContext2D,
+  image: CanvasImageSource,
+  targetX: number,
+  targetY: number,
+  targetWidth: number,
+  targetHeight: number,
+  position: "center" | "top" | "bottom" | "left" | "right" = "center"
+) {
+  // @ts-expect-error width/height exists for supported canvas image sources.
+  const sourceWidth = image.width as number;
+  // @ts-expect-error width/height exists for supported canvas image sources.
+  const sourceHeight = image.height as number;
+
+  const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
+  const drawWidth = sourceWidth * scale;
+  const drawHeight = sourceHeight * scale;
+  const dx = position === "left"
+    ? targetX
+    : position === "right"
+      ? targetX + targetWidth - drawWidth
+      : targetX + (targetWidth - drawWidth) / 2;
+  const dy = position === "top"
+    ? targetY
+    : position === "bottom"
+      ? targetY + targetHeight - drawHeight
+      : targetY + (targetHeight - drawHeight) / 2;
+
+  ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
 }

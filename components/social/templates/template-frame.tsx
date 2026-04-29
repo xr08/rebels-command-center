@@ -15,7 +15,7 @@ type TemplateFrameProps = {
 };
 
 export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentColor, logoPath, layoutKind = "single", options, children }: TemplateFrameProps) {
-  const safeOptions: TemplateOptions = options ?? {
+  const baseOptions: TemplateOptions = options ?? {
     aspectRatio: "square",
     showSponsorStrip: true,
     showLogo: true,
@@ -23,8 +23,22 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
     backgroundImageUrl: null,
     exportMode: false
   };
+  const safeOptions: TemplateOptions = {
+    ...baseOptions,
+    showSponsorStrip: baseOptions.customizations?.showSponsorStrip ?? baseOptions.showSponsorStrip
+  };
   const styleVariant = safeOptions.styleVariant ?? "classic-green";
   const layout = getTemplateLayout(safeOptions.aspectRatio, layoutKind, safeOptions.showSponsorStrip);
+  const displayTitle = safeOptions.customizations?.headlineOverride?.trim() || title;
+  const displaySubtitle = safeOptions.customizations?.subheadingOverride?.trim() || subtitle;
+  const backgroundFitClass = safeOptions.customizations?.backgroundFit === "contain" ? "bg-contain bg-no-repeat" : "bg-cover";
+  const backgroundPositionClass = {
+    center: "bg-center",
+    top: "bg-top",
+    bottom: "bg-bottom",
+    left: "bg-left",
+    right: "bg-right"
+  }[safeOptions.customizations?.backgroundPosition ?? "center"];
 
   const ratioClass = safeOptions.exportMode
     ? "h-full w-full max-w-none aspect-auto rounded-none"
@@ -40,6 +54,13 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
     "juniors-energy": `radial-gradient(circle at 15% 20%, ${accentColor}50 0%, transparent 38%), linear-gradient(145deg, ${primaryColor}F2 0%, #022016F5 62%, #031a12 100%)`,
     "sponsor-clean": "linear-gradient(180deg, rgba(4, 66, 41, 0.92) 0%, rgba(4, 66, 41, 0.86) 60%, rgba(4, 66, 41, 0.82) 100%)"
   } as const;
+  const overlayOpacityByStrength = {
+    none: 0,
+    light: 0.68,
+    medium: 1,
+    strong: 1.18
+  } as const;
+  const overlayOpacity = overlayOpacityByStrength[safeOptions.customizations?.overlayStrength ?? "medium"];
 
   const titleClassByVariant = {
     "classic-green": "text-4xl md:text-5xl",
@@ -70,7 +91,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
     <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 text-white shadow-premium ${ratioClass}`}>
       {safeOptions.backgroundImageUrl ? (
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className={`absolute inset-0 ${backgroundFitClass} ${backgroundPositionClass}`}
           style={{ backgroundImage: `url(${safeOptions.backgroundImageUrl})` }}
         />
       ) : null}
@@ -78,7 +99,8 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
       <div
         className="absolute inset-0"
         style={{
-          background: overlayByVariant[styleVariant]
+          background: overlayByVariant[styleVariant],
+          opacity: overlayOpacity
         }}
       />
 
@@ -103,8 +125,8 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
               >
                 {clubName}
               </p>
-              <h3 className={`mt-2 font-black leading-[0.95] tracking-tight ${titleClassByVariant[styleVariant]} ${headerTextClassByVariant[styleVariant]}`}>{title}</h3>
-              <p className={`mt-2 text-sm font-medium md:text-base ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>{subtitle}</p>
+              <h3 className={`mt-2 font-black leading-[0.95] tracking-tight ${titleClassByVariant[styleVariant]} ${headerTextClassByVariant[styleVariant]}`}>{displayTitle}</h3>
+              <p className={`mt-2 text-sm font-medium md:text-base ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>{displaySubtitle}</p>
             </div>
             {safeOptions.showLogo && logoPath ? (
               <Image

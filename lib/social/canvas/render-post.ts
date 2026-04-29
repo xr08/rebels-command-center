@@ -1,7 +1,8 @@
-import type { FixtureRecord, TemplateFixtureProps, TemplateOptions } from "@/types/social-data";
+import type { FixtureRecord, SocialTemplateCustomizations, TemplateFixtureProps, TemplateOptions } from "@/types/social-data";
 import {
   drawCenteredText,
   drawImageCover,
+  drawImageContain,
   drawLabelValueBox,
   drawWrappedText,
   fillRoundedRect,
@@ -77,23 +78,50 @@ function getHeading(templateKey: CanvasTemplateKey) {
   return "Game Day";
 }
 
+function getDisplayHeading(templateKey: CanvasTemplateKey, options: TemplateOptions) {
+  return options.customizations?.headlineOverride?.trim() || getHeading(templateKey);
+}
+
 function getSubtitle(
   templateKey: CanvasTemplateKey,
   data: TemplateFixtureProps | null | undefined,
-  summaryFixtures: FixtureRecord[] | undefined
+  summaryFixtures: FixtureRecord[] | undefined,
+  options: TemplateOptions
 ) {
+  const override = options.customizations?.subheadingOverride?.trim();
+  if (override) {
+    return override;
+  }
+
   if (templateKey === "round_preview_summary" || templateKey === "round_results_summary") {
     const round = summaryFixtures?.[0]?.round_label ?? "Round";
     const count = summaryFixtures?.length ?? 0;
     const date = summaryFixtures?.[0]?.fixture_date
       ? new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long" }).format(new Date(summaryFixtures[0].fixture_date))
       : "Date TBC";
-    return `${round} | ${count} Fixtures | ${date}`;
+    return options.customizations?.showRound === false
+      ? `${count} Fixtures | ${date}`
+      : `${round} | ${count} Fixtures | ${date}`;
   }
   if (!data) {
     return "Rebels Command Center";
   }
-  return `${data.round} | ${data.teamName ?? "Rebels"}`;
+  return options.customizations?.showRound === false
+    ? data.teamName ?? "Rebels"
+    : `${data.round} | ${data.teamName ?? "Rebels"}`;
+}
+
+function getImageOverlayStops(strength: SocialTemplateCustomizations["overlayStrength"]) {
+  if (strength === "none") {
+    return null;
+  }
+  if (strength === "light") {
+    return [0.28, 0.44] as const;
+  }
+  if (strength === "strong") {
+    return [0.72, 0.84] as const;
+  }
+  return [0.55, 0.72] as const;
 }
 
 async function drawBaseBackground(
@@ -102,8 +130,10 @@ async function drawBaseBackground(
   height: number,
   primaryColor: string,
   accentColor: string,
-  backgroundImage?: string | null
+  options: TemplateOptions
 ) {
+  const customizations = options.customizations;
+  const backgroundImage = options.backgroundImageUrl;
   ctx.fillStyle = primaryColor;
   ctx.fillRect(0, 0, width, height);
 
@@ -113,12 +143,20 @@ async function drawBaseBackground(
       if (!image) {
         return;
       }
-      drawImageCover(ctx, image, 0, 0, width, height);
-      const overlay = ctx.createLinearGradient(0, 0, 0, height);
-      overlay.addColorStop(0, hexToRgba("#021B12", 0.55));
-      overlay.addColorStop(1, hexToRgba("#021B12", 0.72));
-      ctx.fillStyle = overlay;
-      ctx.fillRect(0, 0, width, height);
+      if (customizations?.backgroundFit === "contain") {
+        drawImageContain(ctx, image, 0, 0, width, height, customizations.backgroundPosition);
+      } else {
+        drawImageCover(ctx, image, 0, 0, width, height, customizations?.backgroundPosition);
+      }
+
+      const stops = getImageOverlayStops(customizations?.overlayStrength);
+      if (stops) {
+        const overlay = ctx.createLinearGradient(0, 0, 0, height);
+        overlay.addColorStop(0, hexToRgba("#021B12", stops[0]));
+        overlay.addColorStop(1, hexToRgba("#021B12", stops[1]));
+        ctx.fillStyle = overlay;
+        ctx.fillRect(0, 0, width, height);
+      }
     } catch {
       // Graceful fallback: keep graphic-only background.
     }
@@ -198,6 +236,7 @@ function drawSingleCard(
   data: TemplateFixtureProps,
   accentColor: string,
   showSponsor: boolean,
+  options: TemplateOptions,
   isResult: boolean
 ) {
   const cardTop = height >= 1300 ? 540 : 370;
@@ -264,41 +303,28 @@ function drawSingleCard(
     detailsTop += 138;
   }
 
+  const detailItems = [
+    { label: "Date", value: data.date },
+    ...(options.customizations?.showTime === false ? [] : [{ label: "Time", value: data.time }]),
+    ...(options.customizations?.showRound === false ? [] : [{ label: "Round", value: data.round }]),
+    ...(options.customizations?.showVenue === false ? [] : [{ label: "Venue", value: data.venue }])
+  ];
+
   const boxGap = 16;
-  const boxWidth = (width - 48 - 48 - boxGap) / 2;
+  const boxWidth = detailItems.length === 1 ? width - 156 : (width - 48 - 48 - boxGap) / 2;
   const boxHeight = 128;
 
-  drawLabelValueBox(ctx, {
-    x: 78,
-    y: detailsTop,
-    width: boxWidth,
-    height: boxHeight,
-    label: "Date",
-    value: data.date
-  });
-  drawLabelValueBox(ctx, {
-    x: 78 + boxWidth + boxGap,
-    y: detailsTop,
-    width: boxWidth,
-    height: boxHeight,
-    label: "Time",
-    value: data.time
-  });
-  drawLabelValueBox(ctx, {
-    x: 78,
-    y: detailsTop + boxHeight + boxGap,
-    width: boxWidth,
-    height: boxHeight,
-    label: "Round",
-    value: data.round
-  });
-  drawLabelValueBox(ctx, {
-    x: 78 + boxWidth + boxGap,
-    y: detailsTop + boxHeight + boxGap,
-    width: boxWidth,
-    height: boxHeight,
-    label: "Venue",
-    value: data.venue
+  detailItems.forEach((item, index) => {
+    const row = Math.floor(index / 2);
+    const column = index % 2;
+    drawLabelValueBox(ctx, {
+      x: 78 + column * (boxWidth + boxGap),
+      y: detailsTop + row * (boxHeight + boxGap),
+      width: boxWidth,
+      height: boxHeight,
+      label: item.label,
+      value: item.value
+    });
   });
 }
 
@@ -308,6 +334,7 @@ function drawSummaryCard(
   height: number,
   fixtures: FixtureRecord[],
   showSponsor: boolean,
+  options: TemplateOptions,
   isResult: boolean
 ) {
   const cardTop = height >= 1300 ? 460 : 360;
@@ -351,9 +378,10 @@ function drawSummaryCard(
       const team = formatSummaryName(fixture.teams?.name ?? "Rebels");
       const opponent = fixture.is_bye ? "BYE" : formatSummaryName(fixture.opponent_name);
       const side = fixture.home_or_away ?? "TBC";
+      const fixtureTime = options.customizations?.showTime === false ? "" : ` | ${formatFixtureTime(fixture.fixture_date)}`;
       const match = fixture.is_bye
         ? `${team} | BYE`
-        : `${team} v ${opponent} | ${formatFixtureTime(fixture.fixture_date)} | ${side}`;
+        : `${team} v ${opponent}${fixtureTime} | ${side}`;
       const display = truncateText(ctx, match, panelWidth - (isResult ? 130 : 42));
       ctx.fillText(display, panelX + 16, y + rowHeight / 2 + 8);
 
@@ -401,6 +429,7 @@ function drawSponsorStrip(
 
 export async function renderPostToCanvas(args: RenderPostArgs) {
   const { canvas, templateKey, options, brand } = args;
+  const showSponsorStrip = options.customizations?.showSponsorStrip ?? options.showSponsorStrip;
   const { width, height } = getCanvasSize(options.aspectRatio);
   canvas.width = width;
   canvas.height = height;
@@ -415,16 +444,16 @@ export async function renderPostToCanvas(args: RenderPostArgs) {
     height,
     brand.primaryColor || "#044229",
     brand.accentColor || "#FFCD00",
-    options.backgroundImageUrl
+    options
   );
 
-  const heading = getHeading(templateKey);
-  const subtitle = getSubtitle(templateKey, args.data, args.summaryFixtures);
+  const heading = getDisplayHeading(templateKey, options);
+  const subtitle = getSubtitle(templateKey, args.data, args.summaryFixtures, options);
   await drawHeader(ctx, width, heading, subtitle, brand, options.showLogo);
 
   if (templateKey === "game_day_single" || templateKey === "result_single") {
     if (!args.data) {
-      drawSponsorStrip(ctx, width, height, options.showSponsorStrip);
+      drawSponsorStrip(ctx, width, height, showSponsorStrip);
       return;
     }
     drawSingleCard(
@@ -433,7 +462,8 @@ export async function renderPostToCanvas(args: RenderPostArgs) {
       height,
       args.data,
       brand.accentColor || "#FFCD00",
-      options.showSponsorStrip,
+      showSponsorStrip,
+      options,
       templateKey === "result_single"
     );
   } else {
@@ -442,12 +472,13 @@ export async function renderPostToCanvas(args: RenderPostArgs) {
       width,
       height,
       args.summaryFixtures ?? [],
-      options.showSponsorStrip,
+      showSponsorStrip,
+      options,
       templateKey === "round_results_summary"
     );
   }
 
-  drawSponsorStrip(ctx, width, height, options.showSponsorStrip);
+  drawSponsorStrip(ctx, width, height, showSponsorStrip);
 }
 
 export async function renderPostToDataUrl(args: Omit<RenderPostArgs, "canvas">) {

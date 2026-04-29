@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { SocialPreview } from "@/components/social/preview/social-preview";
+import { CanvasPreviewPanel } from "@/components/social/studio/canvas-preview-panel";
+import { CaptionPanel } from "@/components/social/studio/caption-panel";
+import { CustomFields } from "@/components/social/studio/custom-fields";
+import { FixturePicker } from "@/components/social/studio/fixture-picker";
+import { MediaPicker, type MediaOption } from "@/components/social/studio/media-picker";
+import { ModeTabs } from "@/components/social/studio/mode-tabs";
+import { SocialStudioShell } from "@/components/social/studio/social-studio-shell";
+import { TemplateControls } from "@/components/social/studio/template-controls";
+import { TemplateCustomizer } from "@/components/social/studio/template-customizer";
 import { isCanvasTemplateKey, renderPostToDataUrl } from "@/lib/social/canvas/render-post";
 import {
   buildCaptionByType,
@@ -10,7 +19,7 @@ import {
   buildPreviewSummaryCaption,
   buildResultSummaryCaption
 } from "@/lib/social/caption-builder";
-import { STYLE_VARIANT_LABELS, STYLE_VARIANTS, normalizeStyleVariant } from "@/lib/social/style-variants";
+import { normalizeStyleVariant } from "@/lib/social/style-variants";
 import { createClient } from "@/lib/supabase/client";
 import type { CustomPostType, PostStatus, Stream, StyleVariant } from "@/types/social";
 import type {
@@ -18,7 +27,9 @@ import type {
   CustomTemplateData,
   FixtureRecord,
   MediaAssetRecord,
+  SocialPostDraftPayload,
   SocialPostDraftRecord,
+  SocialTemplateCustomizations,
   SourceLoadState,
   TemplateFixtureProps,
   TemplateOptions,
@@ -43,6 +54,7 @@ type Props = {
 type BuilderMode = "fixture" | "custom";
 type ComposeMode = "single" | "summary";
 type WorkflowMode = "quick" | "full";
+type ViewMode = "upcoming" | "results";
 
 const streamOptions: { label: string; value: Stream }[] = [
   { label: "All", value: "all" },
@@ -75,6 +87,16 @@ const emptyCustomForm: CustomPostFormData = {
   stream: "all",
   selectedMediaId: "",
   selectedLogoId: ""
+};
+
+const defaultCustomizations: SocialTemplateCustomizations = {
+  showVenue: true,
+  showTime: true,
+  showRound: true,
+  showSponsorStrip: true,
+  backgroundFit: "cover",
+  backgroundPosition: "center",
+  overlayStrength: "medium"
 };
 
 function inferResultOutcome(fixture: FixtureRecord): TemplateFixtureProps["resultOutcome"] {
@@ -147,11 +169,18 @@ function formatFixtureTime(value: string) {
   }).format(date).toLowerCase();
 }
 
+function readCustomizations(payload: SocialPostDraftPayload | null | undefined) {
+  return {
+    ...defaultCustomizations,
+    ...(payload?.customizations ?? {})
+  };
+}
+
 export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, sourceState, brand }: Props) {
   const [builderMode, setBuilderMode] = useState<BuilderMode>("fixture");
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
-  const [viewMode, setViewMode] = useState<"upcoming" | "results">("upcoming");
+  const [viewMode, setViewMode] = useState<ViewMode>("upcoming");
   const [stream, setStream] = useState<Stream>("all");
   const [fixtureId, setFixtureId] = useState("");
   const [roundLabel, setRoundLabel] = useState("");
@@ -161,9 +190,10 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const [aspectRatio, setAspectRatio] = useState<TemplateOptions["aspectRatio"]>("square");
   const [styleVariant, setStyleVariant] = useState<StyleVariant>("classic-green");
   const [showSponsorStrip, setShowSponsorStrip] = useState(true);
-  const [showLogo, setShowLogo] = useState(true);
+  const [showLogo] = useState(true);
   const [backgroundAssetId, setBackgroundAssetId] = useState("");
   const [customForm, setCustomForm] = useState<CustomPostFormData>(emptyCustomForm);
+  const [customizations, setCustomizations] = useState<SocialTemplateCustomizations>(defaultCustomizations);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -171,12 +201,13 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       return;
     }
 
+    const payload = initialDraft.custom_payload ?? {};
     setCaption(initialDraft.caption);
+    setCustomizations(readCustomizations(payload));
 
     if (initialDraft.custom_post_type) {
       setBuilderMode("custom");
       setTemplateId(initialDraft.custom_post_type);
-      const payload = initialDraft.custom_payload ?? {};
       setCustomForm((prev) => ({
         ...prev,
         heading: payload.heading ?? "",
@@ -220,7 +251,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     if (workflowMode === "quick") {
       setComposeMode("single");
       setShowSponsorStrip(false);
-      setShowLogo(true);
+      setCustomizations((prev) => ({ ...prev, showSponsorStrip: false }));
     }
   }, [workflowMode]);
 
@@ -275,7 +306,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     });
   }, [mediaAssets]);
 
-  const mediaOptions = useMemo(() => {
+  const mediaOptions: MediaOption[] = useMemo(() => {
     const supabase = createClient();
     return imageAssets.map((asset) => ({
       ...asset,
@@ -288,7 +319,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     }));
   }, [imageAssets]);
 
-  const logoOptions = useMemo(() => {
+  const logoOptions: MediaOption[] = useMemo(() => {
     const supabase = createClient();
     return logoAssets.map((asset) => ({
       ...asset,
@@ -339,6 +370,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const selectedBackgroundId = builderMode === "custom" ? customForm.selectedMediaId : backgroundAssetId;
   const selectedBackgroundUrl = mediaOptions.find((asset) => asset.id === selectedBackgroundId)?.publicUrl ?? null;
   const selectedLogoUrl = logoOptions.find((asset) => asset.id === customForm.selectedLogoId)?.publicUrl ?? null;
+  const effectiveShowSponsorStrip = customizations.showSponsorStrip ?? showSponsorStrip;
 
   const customData: CustomTemplateData | null = builderMode === "custom" && selectedTemplate
     ? {
@@ -349,10 +381,15 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
   const previewOptions: TemplateOptions = {
     aspectRatio,
-    showSponsorStrip,
+    showSponsorStrip: effectiveShowSponsorStrip,
     showLogo,
     styleVariant,
-    backgroundImageUrl: selectedBackgroundUrl
+    backgroundImageUrl: selectedBackgroundUrl,
+    customizations: {
+      ...customizations,
+      showSponsorStrip: effectiveShowSponsorStrip,
+      templateVariation: styleVariant
+    }
   };
 
   const exportOptions: TemplateOptions = {
@@ -492,7 +529,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         template_id: null,
         post_type: "preview_single",
         custom_post_type: selectedTemplate.post_type,
-        custom_payload: customForm,
+        custom_payload: { ...customForm, customizations },
         caption: captionToSave,
         status,
         generated_by: null
@@ -518,7 +555,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         template_id: selectedTemplate.id,
         post_type: selectedTemplate.post_type,
         custom_post_type: null,
-        custom_payload: null,
+        custom_payload: { customizations },
         caption: captionToSave,
         status,
         generated_by: null
@@ -539,403 +576,139 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   };
 
   const quickTemplateHint = selectedTemplate ? `${selectedTemplate.name} | ${previewOptions.aspectRatio}` : "Select template";
+  const saveDraft = () => savePost("draft");
 
-  return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
-      <aside className="glass-panel rounded-2xl p-4">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Builder</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setBuilderMode("fixture")}
-              className={`rounded-md px-3 py-2 text-sm font-semibold ${builderMode === "fixture" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-            >
-              Fixtures
-            </button>
-            <button
-              type="button"
-              onClick={() => setBuilderMode("custom")}
-              className={`rounded-md px-3 py-2 text-sm font-semibold ${builderMode === "custom" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-            >
-              Custom Post
-            </button>
-          </div>
-        </div>
+  const controls = (
+    <div className="space-y-5">
+      <ModeTabs
+        builderMode={builderMode}
+        setBuilderMode={setBuilderMode}
+        workflowMode={workflowMode}
+        setWorkflowMode={setWorkflowMode}
+        composeMode={composeMode}
+        setComposeMode={setComposeMode}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        stream={stream}
+        setStream={setStream}
+        streamOptions={streamOptions}
+      />
 
-        {builderMode === "fixture" ? (
-          <>
-            <div className="mt-4 space-y-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Workflow</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWorkflowMode("quick")}
-                  className={`rounded-md px-3 py-2 text-sm font-semibold ${workflowMode === "quick" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                >
-                  Quick Post
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setWorkflowMode("full")}
-                  className={`rounded-md px-3 py-2 text-sm font-semibold ${workflowMode === "full" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                >
-                  Full Mode
-                </button>
-              </div>
-            </div>
-
-            {workflowMode === "full" ? (
-              <div className="mt-4 space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Generator Mode</p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setComposeMode("single")}
-                    className={`rounded-md px-3 py-2 text-sm ${composeMode === "single" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                  >
-                    Single
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setComposeMode("summary")}
-                    className={`rounded-md px-3 py-2 text-sm ${composeMode === "summary" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                  >
-                    Round Summary
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-4 space-y-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Fixture Feed</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("upcoming")}
-                  className={`rounded-md px-3 py-2 text-sm ${viewMode === "upcoming" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                >
-                  Upcoming
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("results")}
-                  className={`rounded-md px-3 py-2 text-sm ${viewMode === "results" ? "bg-command-accent text-black" : "border border-white/15 text-command-muted"}`}
-                >
-                  Results
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="space-y-1">
-                <span className="text-xs text-command-muted">Stream</span>
-                <select value={stream} onChange={(event) => setStream(event.target.value as Stream)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-                  {streamOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            {composeMode === "single" ? (
-              <ul className="mt-4 max-h-[300px] space-y-2 overflow-auto pr-1">
-                {filteredFixtures.map((fixture) => (
-                  <li key={fixture.id}>
-                    <button
-                      type="button"
-                      onClick={() => setFixtureId(fixture.id)}
-                      className={`w-full rounded-lg border p-3 text-left ${fixture.id === fixtureId ? "border-command-accent bg-command-accent/10" : "border-white/15 bg-black/20"}`}
-                    >
-                      <p className="text-xs text-command-muted">{fixture.round_label}</p>
-                      <p className="text-sm font-semibold">
-                        {fixture.is_bye
-                          ? `${fixture.teams?.name ?? "Rebels"} | BYE`
-                          : `${fixture.teams?.name ?? "Rebels"} v ${fixture.opponent_name} | ${formatFixtureTime(fixture.fixture_date)} | ${fixture.home_or_away ?? "TBC"}`}
-                      </p>
-                    </button>
-                  </li>
-                ))}
-                {!filteredFixtures.length ? (
-                  <li className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 p-3 text-sm text-yellow-100">
-                    No fixtures available for these filters. If this looks wrong, check source Supabase access and fixture status values.
-                  </li>
-                ) : null}
-              </ul>
-            ) : (
-              <label className="mt-4 block space-y-1">
-                <span className="text-xs text-command-muted">Round</span>
-                <select value={roundLabel} onChange={(event) => setRoundLabel(event.target.value)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-                  {availableRounds.map((round) => (
-                    <option key={round} value={round}>
-                      {round}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-command-muted">{summaryFixtures.length} fixture(s) in this summary.</p>
-              </label>
-            )}
-          </>
-        ) : (
-          <div className="mt-4 space-y-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Custom Fields</p>
-            <Field label="Heading" value={customForm.heading} onChange={(value) => setCustomForm((prev) => ({ ...prev, heading: value }))} />
-            <Field label="Subheading" value={customForm.subheading} onChange={(value) => setCustomForm((prev) => ({ ...prev, subheading: value }))} />
-            <Field label="Title" value={customForm.title} onChange={(value) => setCustomForm((prev) => ({ ...prev, title: value }))} />
-            <Field label="Body Text" value={customForm.bodyText} multiline onChange={(value) => setCustomForm((prev) => ({ ...prev, bodyText: value }))} />
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Date" value={customForm.date} onChange={(value) => setCustomForm((prev) => ({ ...prev, date: value }))} />
-              <Field label="Time" value={customForm.time} onChange={(value) => setCustomForm((prev) => ({ ...prev, time: value }))} />
-            </div>
-            <Field label="Location" value={customForm.location} onChange={(value) => setCustomForm((prev) => ({ ...prev, location: value }))} />
-            <Field label="CTA Text" value={customForm.ctaText} onChange={(value) => setCustomForm((prev) => ({ ...prev, ctaText: value }))} />
-            <Field label="Player / Person" value={customForm.personName} onChange={(value) => setCustomForm((prev) => ({ ...prev, personName: value }))} />
-            <Field label="Sponsor" value={customForm.sponsorName} onChange={(value) => setCustomForm((prev) => ({ ...prev, sponsorName: value }))} />
-            <label className="space-y-1">
-              <span className="text-xs text-command-muted">Stream</span>
-              <select
-                value={customForm.stream}
-                onChange={(event) => setCustomForm((prev) => ({ ...prev, stream: event.target.value as Stream }))}
-                className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
-              >
-                {streamOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-      </aside>
-
-      <section className="space-y-4 pb-24 md:pb-4">
-        {sourceState.issues.length ? (
-          <div className="rounded-xl border border-yellow-400/40 bg-yellow-400/10 p-3 text-xs text-yellow-100">
-            <p className="font-semibold uppercase tracking-[0.12em]">Source Data Notice</p>
-            <ul className="mt-2 space-y-1">
-              {sourceState.issues.slice(0, 4).map((issue) => (
-                <li key={issue}>- {issue}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-
-        <div className="glass-panel rounded-2xl p-4">
-          <h3 className="text-lg font-semibold">Post Setup</h3>
-          <p className="mt-1 text-sm text-command-muted">{quickTemplateHint}</p>
-
-          <label className="mt-3 block space-y-1">
-            <span className="text-xs text-command-muted">Template</span>
-            <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              {availableTemplates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-            <label className="space-y-1">
-              <span className="text-xs text-command-muted">Aspect</span>
-              <select value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as TemplateOptions["aspectRatio"])} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-                <option value="square">Square</option>
-                <option value="portrait">Portrait</option>
-              </select>
-            </label>
-            <label className="space-y-1">
-              <span className="text-xs text-command-muted">Style Variant</span>
-              <select
-                value={styleVariant}
-                onChange={(event) => setStyleVariant(event.target.value as StyleVariant)}
-                className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
-              >
-                {STYLE_VARIANTS.map((variant) => (
-                  <option key={variant} value={variant}>
-                    {STYLE_VARIANT_LABELS[variant]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-command-muted">
-              <input type="checkbox" checked={showSponsorStrip} onChange={(event) => setShowSponsorStrip(event.target.checked)} />
-              <span>Sponsor strip</span>
-            </label>
-            <label className="inline-flex items-center gap-2 text-sm text-command-muted">
-              <input type="checkbox" checked={showLogo} onChange={(event) => setShowLogo(event.target.checked)} />
-              <span>Show logo</span>
-            </label>
-          </div>
-
-          <div className="mt-3">
-            <p className="text-xs text-command-muted">Backgrounds</p>
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              <button
-                type="button"
-                onClick={() => builderMode === "custom"
-                  ? setCustomForm((prev) => ({ ...prev, selectedMediaId: "" }))
-                  : setBackgroundAssetId("")}
-                className={`rounded-md border p-2 text-xs ${selectedBackgroundId === "" ? "border-command-accent bg-command-accent/10" : "border-white/15 bg-black/20"}`}
-              >
-                No Image
-              </button>
-              {mediaOptions.slice(0, 12).map((asset) => (
-                <button
-                  key={asset.id}
-                  type="button"
-                  onClick={() => builderMode === "custom"
-                    ? setCustomForm((prev) => ({ ...prev, selectedMediaId: asset.id }))
-                    : setBackgroundAssetId(asset.id)}
-                  className={`overflow-hidden rounded-md border ${selectedBackgroundId === asset.id ? "border-command-accent" : "border-white/15"}`}
-                  title={asset.alt_text || asset.file_path || asset.url || "Background"}
-                >
-                  <div className="aspect-square bg-black/20">
-                    {asset.publicUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={asset.publicUrl} alt={asset.alt_text || asset.file_path || "Background image"} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-[10px] text-command-muted">No preview</div>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {builderMode === "custom" ? (
-            <label className="mt-3 block space-y-1">
-              <span className="text-xs text-command-muted">Logo / Sponsor Asset</span>
-              <select
-                value={customForm.selectedLogoId}
-                onChange={(event) => setCustomForm((prev) => ({ ...prev, selectedLogoId: event.target.value }))}
-                className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
-              >
-                <option value="">Default Club Logo</option>
-                {logoOptions.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.alt_text || asset.file_path || asset.url || asset.id}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : null}
-        </div>
-
-        <div className="overflow-hidden rounded-2xl">
-          <SocialPreview
-            template={selectedTemplate}
-            data={singleData}
-            customData={customData}
-            summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
-            options={previewOptions}
-            brand={previewBrand}
-          />
-        </div>
-
-        <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">
-          <div
-            ref={exportRef}
-            style={{
-              width: `${getExportSize(aspectRatio).width}px`,
-              height: `${getExportSize(aspectRatio).height}px`,
-              overflow: "hidden",
-              background: brand.primaryColor || "#044229"
-            }}
-          >
-            <SocialPreview
-              template={selectedTemplate}
-              data={singleData}
-              customData={customData}
-              summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
-              options={exportOptions}
-              brand={previewBrand}
-            />
-          </div>
-        </div>
-
-        <div className="glass-panel rounded-2xl p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-sm font-semibold uppercase tracking-[0.12em] text-command-accent">Caption</h4>
-            <button type="button" onClick={generateCaption} className="text-xs text-command-muted underline">
-              Generate
-            </button>
-          </div>
-
-          <textarea
-            value={caption}
-            onChange={(event) => setCaption(event.target.value)}
-            rows={workflowMode === "quick" ? 4 : 6}
-            className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
-            placeholder="Generate a caption, then edit before publishing."
-          />
-
-          <div className="mt-3 hidden flex-wrap gap-2 md:flex">
-            <button type="button" onClick={() => savePost("draft")} className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold">
-              Save Draft
-            </button>
-            <button type="button" onClick={copyCaption} className="rounded-md border border-white/15 px-3 py-2 text-sm font-semibold">
-              Copy Caption
-            </button>
-            <button type="button" onClick={exportPng} className="rounded-md bg-command-accent px-3 py-2 text-sm font-semibold text-black">
-              Export PNG
-            </button>
-          </div>
-
-          {message ? <p className="mt-2 text-xs text-command-muted">{message}</p> : null}
-        </div>
-
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/15 bg-[#051b12]/95 p-3 backdrop-blur md:hidden">
-          <div className="grid grid-cols-3 gap-2">
-            <button type="button" onClick={() => savePost("draft")} className="rounded-md border border-white/20 px-3 py-3 text-xs font-semibold">
-              Save Draft
-            </button>
-            <button type="button" onClick={copyCaption} className="rounded-md border border-white/20 px-3 py-3 text-xs font-semibold">
-              Copy
-            </button>
-            <button type="button" onClick={exportPng} className="rounded-md bg-command-accent px-3 py-3 text-xs font-black text-black">
-              Export
-            </button>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  multiline = false
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <label className="space-y-1">
-      <span className="text-xs text-command-muted">{label}</span>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          rows={3}
-          className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
+      {builderMode === "fixture" ? (
+        <FixturePicker
+          composeMode={composeMode}
+          filteredFixtures={filteredFixtures}
+          fixtureId={fixtureId}
+          setFixtureId={setFixtureId}
+          availableRounds={availableRounds}
+          roundLabel={roundLabel}
+          setRoundLabel={setRoundLabel}
+          summaryFixtureCount={summaryFixtures.length}
+          formatFixtureTime={formatFixtureTime}
         />
       ) : (
-        <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
-        />
+        <CustomFields customForm={customForm} setCustomForm={setCustomForm} streamOptions={streamOptions} />
       )}
-    </label>
+    </div>
+  );
+
+  const setup = (
+    <>
+      <TemplateControls
+        templates={availableTemplates}
+        templateId={templateId}
+        setTemplateId={setTemplateId}
+        aspectRatio={aspectRatio}
+        setAspectRatio={setAspectRatio}
+        styleVariant={styleVariant}
+        setStyleVariant={setStyleVariant}
+        quickTemplateHint={quickTemplateHint}
+      />
+      <MediaPicker
+        mediaOptions={mediaOptions}
+        selectedBackgroundId={selectedBackgroundId}
+        onSelectBackground={(id) => builderMode === "custom"
+          ? setCustomForm((prev) => ({ ...prev, selectedMediaId: id }))
+          : setBackgroundAssetId(id)}
+        logoOptions={logoOptions}
+        selectedLogoId={customForm.selectedLogoId}
+        onSelectLogo={(id) => setCustomForm((prev) => ({ ...prev, selectedLogoId: id }))}
+        showLogoPicker={builderMode === "custom"}
+      />
+      <TemplateCustomizer
+        value={customizations}
+        onChange={(next) => {
+          setCustomizations(next);
+          if (typeof next.showSponsorStrip === "boolean") {
+            setShowSponsorStrip(next.showSponsorStrip);
+          }
+        }}
+        sponsorSupported
+      />
+    </>
+  );
+
+  const preview = (
+    <CanvasPreviewPanel
+      template={selectedTemplate}
+      data={singleData}
+      customData={customData}
+      summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+      options={previewOptions}
+      brand={previewBrand}
+    />
+  );
+
+  const captionPanel = (
+    <CaptionPanel
+      caption={caption}
+      setCaption={setCaption}
+      rows={workflowMode === "quick" ? 4 : 6}
+      message={message}
+      onGenerate={generateCaption}
+      onCopy={copyCaption}
+      onSaveDraft={saveDraft}
+      onExport={exportPng}
+    />
+  );
+
+  const exportFrame = (
+    <div className="pointer-events-none fixed -left-[10000px] top-0 opacity-0">
+      <div
+        ref={exportRef}
+        style={{
+          width: `${getExportSize(aspectRatio).width}px`,
+          height: `${getExportSize(aspectRatio).height}px`,
+          overflow: "hidden",
+          background: brand.primaryColor || "#044229"
+        }}
+      >
+        <SocialPreview
+          template={selectedTemplate}
+          data={singleData}
+          customData={customData}
+          summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+          options={exportOptions}
+          brand={previewBrand}
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <SocialStudioShell
+      controls={controls}
+      setup={setup}
+      preview={preview}
+      caption={captionPanel}
+      exportFrame={exportFrame}
+      sourceIssues={sourceState.issues}
+      actions={{
+        onGenerateCaption: generateCaption,
+        onCopyCaption: copyCaption,
+        onSaveDraft: saveDraft,
+        onExport: exportPng
+      }}
+    />
   );
 }
