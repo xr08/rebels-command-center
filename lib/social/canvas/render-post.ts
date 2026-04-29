@@ -132,6 +132,13 @@ function getOverlayStops(strength: SocialTemplateCustomizations["overlayStrength
   return [0.44, 0.62] as const;
 }
 
+function getOverlayAlpha(strength: SocialTemplateCustomizations["overlayStrength"]) {
+  if (strength === "none") return 0;
+  if (strength === "light") return 0.18;
+  if (strength === "strong") return 0.5;
+  return 0.34;
+}
+
 async function drawPhoto(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -185,26 +192,10 @@ async function drawBaseBackground(
     ctx.fillRect(0, 0, width, height);
   }
 
-  if (variation === "photo-gradient-green" || variation === "photo-gradient-gold" || variation === "team-list-photo") {
-    return;
-  }
-
-  const stops = getOverlayStops(options.customizations?.overlayStrength);
-  if (stops) {
-    const overlay = ctx.createLinearGradient(0, 0, 0, height);
-    overlay.addColorStop(0, hexToRgba(REBELS_DARK, stops[0]));
-    overlay.addColorStop(1, hexToRgba(REBELS_DARK, stops[1]));
-    ctx.fillStyle = overlay;
-    ctx.fillRect(0, 0, width, height);
-  }
-
   if (variation === "minimal-board") {
     ctx.fillStyle = hexToRgba(REBELS_GREEN, 0.9);
     ctx.fillRect(0, 0, width, height);
-    return;
-  }
-
-  if (variation === "juniors-energy") {
+  } else if (variation === "juniors-energy") {
     ctx.fillStyle = hexToRgba(brand.accentColor || REBELS_GOLD, 0.24);
     ctx.beginPath();
     ctx.arc(width - 120, 126, 230, 0, Math.PI * 2);
@@ -213,14 +204,23 @@ async function drawBaseBackground(
     ctx.beginPath();
     ctx.arc(34, height - 110, 180, 0, Math.PI * 2);
     ctx.fill();
-    return;
+  } else if (variation === "classic-green") {
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, hexToRgba(brand.primaryColor || REBELS_GREEN, 0.26));
+    gradient.addColorStop(1, hexToRgba(REBELS_DARK, 0.66));
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
   }
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, hexToRgba(brand.primaryColor || REBELS_GREEN, 0.26));
-  gradient.addColorStop(1, hexToRgba(REBELS_DARK, 0.66));
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
+  const stops = getOverlayStops(options.customizations?.overlayStrength);
+  const alpha = getOverlayAlpha(options.customizations?.overlayStrength);
+  if (stops && alpha > 0) {
+    const overlay = ctx.createLinearGradient(0, 0, 0, height);
+    overlay.addColorStop(0, hexToRgba(REBELS_DARK, Math.max(alpha - 0.06, 0.05)));
+    overlay.addColorStop(1, hexToRgba(REBELS_DARK, alpha));
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+  }
 }
 
 async function drawLogo(
@@ -369,23 +369,15 @@ function drawClassicSingle(
     ctx.font = `900 86px ${FONT_STACK}`;
     drawCenteredText(ctx, data.isBye ? "|" : "-", width / 2, scoreTop + 116);
   } else {
-    const leftName = data.teamName ?? "Rebels";
-    const rightName = data.opponent;
+    const leftName = options.customizations?.teamNameOverride?.trim() || data.teamName || "Rebels";
+    const rightName = options.customizations?.opponentNameOverride?.trim() || data.opponent;
     ctx.fillStyle = TEXT;
-    const leftNameSize = fitFontSize(ctx, leftName, FONT_STACK, 900, 64, 34, columnWidth - 28);
-    const rightNameSize = fitFontSize(ctx, rightName, FONT_STACK, 900, 64, 34, columnWidth - 28);
+    const leftNameSize = fitFontSize(ctx, leftName, FONT_STACK, 900, 56, 30, columnWidth - 28);
+    const rightNameSize = fitFontSize(ctx, rightName, FONT_STACK, 900, 56, 30, columnWidth - 28);
     ctx.font = `900 ${leftNameSize}px ${FONT_STACK}`;
-    drawWrappedText(ctx, leftName, leftX + 14, teamCenterY - leftNameSize, {
-      maxWidth: columnWidth - 28,
-      lineHeight: leftNameSize + 6,
-      maxLines: 2
-    });
+    drawCenteredText(ctx, truncateText(ctx, leftName, columnWidth - 28), leftCenter, teamCenterY + 12);
     ctx.font = `900 ${rightNameSize}px ${FONT_STACK}`;
-    drawWrappedText(ctx, rightName, rightX + 14, teamCenterY - rightNameSize, {
-      maxWidth: columnWidth - 28,
-      lineHeight: rightNameSize + 6,
-      maxLines: 2
-    });
+    drawCenteredText(ctx, truncateText(ctx, rightName, columnWidth - 28), rightCenter, teamCenterY + 12);
 
     fillRoundedRect(ctx, width / 2 - 46, teamCenterY - 44, 92, 92, 46, hexToRgba(gold, 0.96));
     ctx.fillStyle = REBELS_GREEN;
@@ -441,7 +433,8 @@ async function drawPhotoGradientSingle(
   ctx.fillStyle = shade;
   ctx.fillRect(panelX, 0, panelWidth, height);
 
-  ctx.fillStyle = "rgba(0,0,0,0.24)";
+  const overlayAlpha = getOverlayAlpha(options.customizations?.overlayStrength);
+  ctx.fillStyle = hexToRgba(REBELS_DARK, overlayAlpha > 0 ? Math.max(overlayAlpha * 0.7, 0.12) : 0.08);
   ctx.fillRect(0, 0, width, height);
 
   await drawLogo(ctx, brand, 62, 60, 126, isGold ? hexToRgba(green, 0.35) : "rgba(255,255,255,0.3)");
@@ -472,6 +465,8 @@ async function drawPhotoGradientSingle(
 
   const teamY = height >= 1300 ? 510 : 440;
   const maxText = panelWidth - 110;
+  const displayTeamName = options.customizations?.teamNameOverride?.trim() || data.teamName || "Rebels";
+  const displayOpponent = options.customizations?.opponentNameOverride?.trim() || data.opponent;
   if (templateKey === "result_single") {
     const [leftScore, rightScore] = (data.score ?? "- -").split("-");
     ctx.fillStyle = textColor;
@@ -479,17 +474,17 @@ async function drawPhotoGradientSingle(
     ctx.fillText(`${leftScore || "-"} - ${rightScore || "-"}`, 66, teamY);
     ctx.fillStyle = softText;
     ctx.font = `800 38px ${FONT_STACK}`;
-    ctx.fillText(`${data.teamName ?? "Rebels"} v ${data.opponent}`, 66, teamY + 58);
+    ctx.fillText(`${displayTeamName} v ${displayOpponent}`, 66, teamY + 58);
   } else {
     ctx.fillStyle = textColor;
-    ctx.font = `900 ${fitFontSize(ctx, data.teamName ?? "Rebels", FONT_STACK, 900, 68, 34, maxText)}px ${FONT_STACK}`;
-    ctx.fillText(data.teamName ?? "Rebels", 66, teamY);
+    ctx.font = `900 ${fitFontSize(ctx, displayTeamName, FONT_STACK, 900, 68, 34, maxText)}px ${FONT_STACK}`;
+    ctx.fillText(displayTeamName, 66, teamY);
     ctx.fillStyle = accent;
     ctx.font = `900 44px ${FONT_STACK}`;
     ctx.fillText(data.isBye ? "|" : "VS", 66, teamY + 64);
     ctx.fillStyle = textColor;
-    ctx.font = `900 ${fitFontSize(ctx, data.opponent, FONT_STACK, 900, 68, 34, maxText)}px ${FONT_STACK}`;
-    drawWrappedText(ctx, data.opponent, 66, teamY + 132, {
+    ctx.font = `900 ${fitFontSize(ctx, displayOpponent, FONT_STACK, 900, 68, 34, maxText)}px ${FONT_STACK}`;
+    drawWrappedText(ctx, displayOpponent, 66, teamY + 132, {
       maxWidth: maxText,
       lineHeight: 74,
       maxLines: 2
@@ -580,8 +575,6 @@ function drawSummaryCard(
   const variation = getVariation(options);
   const heading = getDisplayHeading(isResult ? "round_results_summary" : "round_preview_summary", options);
   const subtitle = getSubtitle(isResult ? "round_results_summary" : "round_preview_summary", null, fixtures, options);
-  void brand;
-  const panelTop = height >= 1300 ? 340 : 300;
   const maxPanelBottom = height - 60;
   const panelWidth = width - 112;
   const grouped = fixtures.reduce<Record<string, FixtureRecord[]>>((acc, fixture) => {
@@ -593,17 +586,15 @@ function drawSummaryCard(
     return acc;
   }, {});
   const entries = Object.entries(grouped);
-  const totalRows = fixtures.length + entries.length;
-  const rowHeight = totalRows > 12 ? 38 : totalRows > 8 ? 46 : 54;
-  const rowGap = totalRows > 12 ? 7 : 10;
-  const sectionGap = rowGap + 18;
-  const headerSpace = 170;
-  const contentHeight = entries.reduce((sum, [, streamFixtures]) => sum + sectionGap + streamFixtures.length * (rowHeight + rowGap), 0);
-  const desiredHeight = headerSpace + contentHeight + 30;
-  const minHeight = height >= 1300 ? 420 : 330;
-  const maxHeight = maxPanelBottom - panelTop;
-  const panelHeight = Math.min(maxHeight, Math.max(minHeight, desiredHeight));
-  const panelBottom = panelTop + panelHeight;
+  const totalRows = Math.max(fixtures.length + entries.length, 1);
+  const baseRowGap = totalRows > 12 ? 7 : 10;
+  const streamHeaderHeight = totalRows > 12 ? 22 : 26;
+  const sectionBreak = 20;
+  const panelBottom = maxPanelBottom;
+  const maxPanelHeight = height >= 1300 ? 760 : 620;
+  const minPanelHeight = height >= 1300 ? 430 : 360;
+  const requestedPanelHeight = Math.min(maxPanelHeight, Math.max(minPanelHeight, 180 + fixtures.length * 46 + entries.length * 36));
+  const panelTop = panelBottom - requestedPanelHeight;
 
   if (variation === "photo-gradient-green" || variation === "photo-gradient-gold") {
     const panelGradient = ctx.createLinearGradient(56, panelTop, 56 + panelWidth, panelTop);
@@ -629,18 +620,29 @@ function drawSummaryCard(
   ctx.font = `700 ${fitFontSize(ctx, subtitle, FONT_STACK, 700, 30, 18, panelWidth - 56)}px ${FONT_STACK}`;
   ctx.fillText(subtitle, 90, panelTop + 116);
 
-  let y = panelTop + 170;
+  const listTop = panelTop + 166;
+  const listBottom = panelBottom - 26;
+  const rowSpace = Math.max(listBottom - listTop, 200);
+  const dynamicRowHeight = fixtures.length
+    ? Math.max(34, Math.min(64, Math.floor((rowSpace - (entries.length * (streamHeaderHeight + 12)) - ((entries.length - 1) * sectionBreak) - (fixtures.length * baseRowGap)) / fixtures.length)))
+    : 44;
+
+  let y = listTop;
+  let streamIndex = 0;
 
   for (const [stream, streamFixtures] of entries) {
+    if (streamIndex > 0) {
+      y += sectionBreak;
+    }
     ctx.fillStyle = brand.accentColor || REBELS_GOLD;
     ctx.font = `800 ${totalRows > 12 ? 24 : 28}px ${FONT_STACK}`;
     const streamLabel = stream === "mens" ? "MENS" : stream === "womens" ? "WOMENS" : stream === "juniors" ? "JUNIORS" : "ALL";
     ctx.fillText(`${streamLabel} | ${streamFixtures.length} FIXTURES`, 88, y);
-    y += rowGap + 18;
+    y += streamHeaderHeight + 12;
 
     for (const fixture of streamFixtures) {
-      fillRoundedRect(ctx, 88, y, panelWidth - 64, rowHeight, 14, "rgba(255,255,255,0.06)");
-      strokeRoundedRect(ctx, 88, y, panelWidth - 64, rowHeight, 14, "rgba(255,255,255,0.13)", 1.4);
+      fillRoundedRect(ctx, 88, y, panelWidth - 64, dynamicRowHeight, 14, "rgba(255,255,255,0.06)");
+      strokeRoundedRect(ctx, 88, y, panelWidth - 64, dynamicRowHeight, 14, "rgba(255,255,255,0.13)", 1.4);
 
       ctx.fillStyle = TEXT;
       ctx.font = `700 ${totalRows > 12 ? 17 : 20}px ${FONT_STACK}`;
@@ -649,20 +651,21 @@ function drawSummaryCard(
       const side = fixture.home_or_away ?? "TBC";
       const fixtureTime = options.customizations?.showTime === false ? "" : ` | ${formatFixtureTime(fixture.fixture_date)}`;
       const match = fixture.is_bye ? `${team} | BYE` : `${team} v ${opponent}${fixtureTime} | ${side}`;
-      ctx.fillText(truncateText(ctx, match, panelWidth - (isResult ? 190 : 110)), 106, y + rowHeight / 2 + 8);
+      ctx.fillText(truncateText(ctx, match, panelWidth - (isResult ? 190 : 110)), 106, y + dynamicRowHeight / 2 + 8);
 
       if (isResult) {
         const score = fixture.is_bye ? "BYE" : `${fixture.home_score ?? "-"}-${fixture.away_score ?? "-"}`;
         ctx.fillStyle = brand.accentColor || REBELS_GOLD;
         ctx.font = `900 ${totalRows > 12 ? 16 : 18}px ${FONT_STACK}`;
-        ctx.fillText(truncateText(ctx, score, 96), width - 168, y + rowHeight / 2 + 7);
+        ctx.fillText(truncateText(ctx, score, 96), width - 168, y + dynamicRowHeight / 2 + 7);
       }
 
-      y += rowHeight + rowGap;
+      y += dynamicRowHeight + baseRowGap;
       if (y > panelBottom - 32) {
         return;
       }
     }
+    streamIndex += 1;
   }
 }
 

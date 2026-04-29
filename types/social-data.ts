@@ -85,6 +85,8 @@ export type TemplateOptions = {
 export type SocialTemplateCustomizations = {
   headlineOverride?: string;
   subheadingOverride?: string;
+  teamNameOverride?: string;
+  opponentNameOverride?: string;
   showVenue?: boolean;
   showTime?: boolean;
   showRound?: boolean;

@@ -62,6 +62,20 @@ export function TemplateCustomizer({ value, onChange, showListControls }: Props)
           onChange={(next) => setValue(value, "subheadingOverride", next, onChange)}
           placeholder="Leave blank for template default"
         />
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <Field
+            label="Home Team Override"
+            value={value.teamNameOverride ?? ""}
+            onChange={(next) => setValue(value, "teamNameOverride", next, onChange)}
+            placeholder="Optional"
+          />
+          <Field
+            label="Opponent Override"
+            value={value.opponentNameOverride ?? ""}
+            onChange={(next) => setValue(value, "opponentNameOverride", next, onChange)}
+            placeholder="Optional"
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <label className="inline-flex items-center gap-2 text-sm text-command-muted">
