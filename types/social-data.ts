@@ -99,8 +99,9 @@ export type SocialTemplateCustomizations = {
   listTitle?: string;
   listSubtitle?: string;
   listRows?: {
+    type: "position" | "number";
     label: string;
-    name: string;
+    playerName: string;
   }[];
 };
 

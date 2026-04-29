@@ -14,6 +14,15 @@ type Props = {
 };
 
 export function CustomPostShell({ data, options, brand, title }: Props) {
+  const isPlayer = data.postType === "player_of_the_day";
+  const isSponsor = data.postType === "sponsor_highlight";
+  const isTraining = data.postType === "training_reminder";
+  const isEvent = data.postType === "event_announcement";
+  const isPhoto = data.postType === "photo_highlight";
+  const showDateTime = Boolean(data.date || data.time || data.location);
+  const showBody = Boolean(data.bodyText);
+  const showCTA = Boolean(data.ctaText);
+
   return (
     <TemplateFrame
       title={title}
@@ -25,21 +34,23 @@ export function CustomPostShell({ data, options, brand, title }: Props) {
       layoutKind="custom"
       options={options}
     >
-      <div className="space-y-3 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5">
+      <div className="space-y-3 rounded-2xl border border-white/20 bg-black/55 p-4 md:p-5">
         {data.heading ? <p className="text-xs uppercase tracking-[0.18em] text-command-accent">{data.heading}</p> : null}
         {data.title ? <h4 className="text-2xl font-black leading-tight text-white md:text-3xl">{data.title}</h4> : null}
-        {data.bodyText ? <p className="text-sm leading-relaxed text-white/90 md:text-base">{data.bodyText}</p> : null}
+        {showBody ? <p className="text-sm leading-relaxed text-white/90 md:text-base">{data.bodyText}</p> : null}
 
         <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
-          {data.personName ? <MetaCard label="Player" value={data.personName} /> : null}
-          {data.sponsorName ? <MetaCard label="Sponsor" value={data.sponsorName} /> : null}
-          {data.date ? <MetaCard label="Date" value={data.date} /> : null}
-          {data.time ? <MetaCard label="Time" value={data.time} /> : null}
-          {data.location ? <MetaCard label="Location" value={data.location} /> : null}
+          {isPlayer && data.personName ? <MetaCard label="Player" value={data.personName} /> : null}
+          {isSponsor && data.sponsorName ? <MetaCard label="Sponsor" value={data.sponsorName} /> : null}
+          {isTraining && data.personName ? <MetaCard label="Coach / Contact" value={data.personName} /> : null}
+          {(isEvent || isPhoto) && data.personName ? <MetaCard label="Featured" value={data.personName} /> : null}
+          {showDateTime && data.date ? <MetaCard label="Date" value={data.date} /> : null}
+          {showDateTime && data.time ? <MetaCard label="Time" value={data.time} /> : null}
+          {showDateTime && data.location ? <MetaCard label="Location" value={data.location} /> : null}
           {data.stream && data.stream !== "all" ? <MetaCard label="Stream" value={data.stream} /> : null}
         </div>
 
-        {data.ctaText ? (
+        {showCTA ? (
           <div className="inline-flex rounded-full border border-command-accent/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-command-accent">
             {data.ctaText}
           </div>

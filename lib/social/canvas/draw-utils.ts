@@ -57,7 +57,7 @@ export function fillRoundedRect(
   width: number,
   height: number,
   radius: number,
-  fillStyle: string
+  fillStyle: string | CanvasGradient | CanvasPattern
 ) {
   roundedRectPath(ctx, x, y, width, height, radius);
   ctx.fillStyle = fillStyle;

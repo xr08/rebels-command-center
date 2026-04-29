@@ -347,6 +347,7 @@ function drawClassicSingle(
   strokeRoundedRect(ctx, 48, cardTop, width - 96, cardHeight, 30, "rgba(255,255,255,0.18)", 2);
 
   const scoreTop = cardTop + 56;
+  const teamCenterY = scoreTop + 108;
   const columnWidth = (width - 180) / 2;
   const leftX = 78;
   const rightX = width - 78 - columnWidth;
@@ -374,22 +375,22 @@ function drawClassicSingle(
     const leftNameSize = fitFontSize(ctx, leftName, FONT_STACK, 900, 64, 34, columnWidth - 28);
     const rightNameSize = fitFontSize(ctx, rightName, FONT_STACK, 900, 64, 34, columnWidth - 28);
     ctx.font = `900 ${leftNameSize}px ${FONT_STACK}`;
-    drawWrappedText(ctx, leftName, leftX + 14, scoreTop + 86, {
+    drawWrappedText(ctx, leftName, leftX + 14, teamCenterY - leftNameSize, {
       maxWidth: columnWidth - 28,
       lineHeight: leftNameSize + 6,
       maxLines: 2
     });
     ctx.font = `900 ${rightNameSize}px ${FONT_STACK}`;
-    drawWrappedText(ctx, rightName, rightX + 14, scoreTop + 86, {
+    drawWrappedText(ctx, rightName, rightX + 14, teamCenterY - rightNameSize, {
       maxWidth: columnWidth - 28,
       lineHeight: rightNameSize + 6,
       maxLines: 2
     });
 
-    fillRoundedRect(ctx, width / 2 - 46, scoreTop + 62, 92, 92, 46, hexToRgba(gold, 0.96));
+    fillRoundedRect(ctx, width / 2 - 46, teamCenterY - 44, 92, 92, 46, hexToRgba(gold, 0.96));
     ctx.fillStyle = REBELS_GREEN;
     ctx.font = `900 42px ${FONT_STACK}`;
-    drawCenteredText(ctx, data.isBye ? "|" : "VS", width / 2, scoreTop + 122);
+    drawCenteredText(ctx, data.isBye ? "|" : "VS", width / 2, teamCenterY + 14);
   }
 
   let detailsTop = scoreTop + (isResult ? 190 : 212);
@@ -559,10 +560,11 @@ function drawTeamListPhoto(
     fillRoundedRect(ctx, 94, y, rowWidth, rowHeight - 10, 16, index % 2 === 0 ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.06)");
     ctx.fillStyle = gold;
     ctx.font = `900 28px ${FONT_STACK}`;
-    ctx.fillText((row.label || "-").toUpperCase(), 118, y + 40);
+    const rowLabel = row.type === "number" && row.label ? `#${row.label}` : (row.label || "-").toUpperCase();
+    ctx.fillText(rowLabel, 118, y + 40);
     ctx.fillStyle = TEXT;
-    ctx.font = `800 ${fitFontSize(ctx, row.name || "Player Name", FONT_STACK, 800, 34, 20, rowWidth - 122)}px ${FONT_STACK}`;
-    ctx.fillText(row.name || "Player Name", 184, y + 40);
+    ctx.font = `800 ${fitFontSize(ctx, row.playerName || "Player Name", FONT_STACK, 800, 34, 20, rowWidth - 122)}px ${FONT_STACK}`;
+    ctx.fillText(row.playerName || "Player Name", 184, y + 40);
   });
 }
 
@@ -580,10 +582,44 @@ function drawSummaryCard(
   const subtitle = getSubtitle(isResult ? "round_results_summary" : "round_preview_summary", null, fixtures, options);
   void brand;
   const panelTop = height >= 1300 ? 340 : 300;
-  const panelBottom = height - 60;
+  const maxPanelBottom = height - 60;
   const panelWidth = width - 112;
+  const grouped = fixtures.reduce<Record<string, FixtureRecord[]>>((acc, fixture) => {
+    const key = fixture.teams?.stream ?? "all";
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(fixture);
+    return acc;
+  }, {});
+  const entries = Object.entries(grouped);
+  const totalRows = fixtures.length + entries.length;
+  const rowHeight = totalRows > 12 ? 38 : totalRows > 8 ? 46 : 54;
+  const rowGap = totalRows > 12 ? 7 : 10;
+  const sectionGap = rowGap + 18;
+  const headerSpace = 170;
+  const contentHeight = entries.reduce((sum, [, streamFixtures]) => sum + sectionGap + streamFixtures.length * (rowHeight + rowGap), 0);
+  const desiredHeight = headerSpace + contentHeight + 30;
+  const minHeight = height >= 1300 ? 420 : 330;
+  const maxHeight = maxPanelBottom - panelTop;
+  const panelHeight = Math.min(maxHeight, Math.max(minHeight, desiredHeight));
+  const panelBottom = panelTop + panelHeight;
 
-  fillRoundedRect(ctx, 56, panelTop, panelWidth, panelBottom - panelTop, 28, variation === "minimal-board" ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.34)");
+  if (variation === "photo-gradient-green" || variation === "photo-gradient-gold") {
+    const panelGradient = ctx.createLinearGradient(56, panelTop, 56 + panelWidth, panelTop);
+    if (variation === "photo-gradient-gold") {
+      panelGradient.addColorStop(0, hexToRgba(REBELS_GOLD, 0.9));
+      panelGradient.addColorStop(0.66, hexToRgba(REBELS_GOLD, 0.58));
+      panelGradient.addColorStop(1, hexToRgba(REBELS_GOLD, 0.1));
+    } else {
+      panelGradient.addColorStop(0, hexToRgba(REBELS_GREEN, 0.9));
+      panelGradient.addColorStop(0.66, hexToRgba(REBELS_GREEN, 0.62));
+      panelGradient.addColorStop(1, hexToRgba(REBELS_GREEN, 0.1));
+    }
+    fillRoundedRect(ctx, 56, panelTop, panelWidth, panelBottom - panelTop, 28, panelGradient);
+  } else {
+    fillRoundedRect(ctx, 56, panelTop, panelWidth, panelBottom - panelTop, 28, variation === "minimal-board" ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.34)");
+  }
   strokeRoundedRect(ctx, 56, panelTop, panelWidth, panelBottom - panelTop, 28, "rgba(255,255,255,0.18)", 2);
 
   ctx.fillStyle = TEXT;
@@ -593,19 +629,6 @@ function drawSummaryCard(
   ctx.font = `700 ${fitFontSize(ctx, subtitle, FONT_STACK, 700, 30, 18, panelWidth - 56)}px ${FONT_STACK}`;
   ctx.fillText(subtitle, 90, panelTop + 116);
 
-  const grouped = fixtures.reduce<Record<string, FixtureRecord[]>>((acc, fixture) => {
-    const key = fixture.teams?.stream ?? "all";
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(fixture);
-    return acc;
-  }, {});
-
-  const entries = Object.entries(grouped);
-  const totalRows = fixtures.length + entries.length;
-  const rowHeight = totalRows > 12 ? 38 : totalRows > 8 ? 46 : 54;
-  const rowGap = totalRows > 12 ? 7 : 10;
   let y = panelTop + 170;
 
   for (const [stream, streamFixtures] of entries) {

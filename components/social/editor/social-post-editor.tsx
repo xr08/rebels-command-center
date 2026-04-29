@@ -620,7 +620,12 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           formatFixtureTime={formatFixtureTime}
         />
       ) : (
-        <CustomFields customForm={customForm} setCustomForm={setCustomForm} streamOptions={streamOptions} />
+        <CustomFields
+          customForm={customForm}
+          setCustomForm={setCustomForm}
+          streamOptions={streamOptions}
+          customPostType={(selectedTemplate?.post_type as CustomPostType | undefined) ?? null}
+        />
       )}
     </div>
   );

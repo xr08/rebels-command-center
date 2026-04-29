@@ -19,7 +19,7 @@ function setValue<K extends keyof SocialTemplateCustomizations>(
 }
 
 function formatRows(rows: SocialTemplateCustomizations["listRows"]) {
-  return (rows ?? []).map((row) => `${row.label} | ${row.name}`).join("\n");
+  return (rows ?? []).map((row) => `${row.label} | ${row.playerName}`).join("\n");
 }
 
 function parseRows(value: string): NonNullable<SocialTemplateCustomizations["listRows"]> {
@@ -28,11 +28,21 @@ function parseRows(value: string): NonNullable<SocialTemplateCustomizations["lis
     .map((line) => {
       const [label = "", ...nameParts] = line.split("|");
       return {
+        type: (/^\d+$/.test(label.trim()) ? "number" : "position") as "number" | "position",
         label: label.trim(),
-        name: nameParts.join("|").trim()
+        playerName: nameParts.join("|").trim()
       };
     })
-    .filter((row) => row.label || row.name);
+    .filter((row) => row.label || row.playerName);
+}
+
+function updateListRows(
+  value: SocialTemplateCustomizations,
+  onChange: (value: SocialTemplateCustomizations) => void,
+  updater: (rows: NonNullable<SocialTemplateCustomizations["listRows"]>) => NonNullable<SocialTemplateCustomizations["listRows"]>
+) {
+  const currentRows = value.listRows ?? [];
+  onChange({ ...value, listRows: updater(currentRows) });
 }
 
 export function TemplateCustomizer({ value, onChange, showListControls }: Props) {
@@ -81,7 +91,7 @@ export function TemplateCustomizer({ value, onChange, showListControls }: Props)
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-xs text-command-muted">Position</span>
+            <span className="text-xs text-command-muted">Position Preset</span>
             <select
               value={value.backgroundPosition ?? "center"}
               onChange={(event) => setValue(value, "backgroundPosition", event.target.value as SocialTemplateCustomizations["backgroundPosition"], onChange)}
@@ -159,13 +169,87 @@ export function TemplateCustomizer({ value, onChange, showListControls }: Props)
               onChange={(next) => setValue(value, "listSubtitle", next, onChange)}
               placeholder="Optional"
             />
-            <Field
-              label="Rows"
-              value={formatRows(value.listRows)}
-              onChange={(next) => setValue(value, "listRows", parseRows(next), onChange)}
-              multiline
-              placeholder={"P | Player Name\nC | Player Name\n1B | Player Name"}
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-command-muted">Team Rows</p>
+                <button
+                  type="button"
+                  onClick={() => updateListRows(value, onChange, (rows) => [...rows, { type: "position", label: "", playerName: "" }])}
+                  className="rounded-md border border-white/15 px-2 py-1 text-xs text-command-muted hover:text-command-text"
+                >
+                  Add Row
+                </button>
+              </div>
+
+              {(value.listRows ?? []).map((row, index) => (
+                <div key={`${index}-${row.label}-${row.playerName}`} className="grid grid-cols-[110px_1fr_1fr_auto] gap-2">
+                  <select
+                    value={row.type}
+                    onChange={(event) => updateListRows(value, onChange, (rows) => rows.map((r, i) => (i === index ? { ...r, type: event.target.value as "position" | "number" } : r)))}
+                    className="rounded-md border border-white/15 bg-black/20 p-2 text-sm"
+                  >
+                    <option value="position">Position</option>
+                    <option value="number">Number</option>
+                  </select>
+                  <input
+                    value={row.label}
+                    onChange={(event) => updateListRows(value, onChange, (rows) => rows.map((r, i) => (i === index ? { ...r, label: event.target.value } : r)))}
+                    className="rounded-md border border-white/15 bg-black/20 p-2 text-sm"
+                    placeholder="P or 7"
+                  />
+                  <input
+                    value={row.playerName}
+                    onChange={(event) => updateListRows(value, onChange, (rows) => rows.map((r, i) => (i === index ? { ...r, playerName: event.target.value } : r)))}
+                    className="rounded-md border border-white/15 bg-black/20 p-2 text-sm"
+                    placeholder="Player Name"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => updateListRows(value, onChange, (rows) => {
+                        if (index === 0) return rows;
+                        const next = [...rows];
+                        [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                        return next;
+                      })}
+                      className="rounded-md border border-white/15 px-2 py-1 text-xs text-command-muted"
+                      title="Move Up"
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateListRows(value, onChange, (rows) => {
+                        if (index === rows.length - 1) return rows;
+                        const next = [...rows];
+                        [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                        return next;
+                      })}
+                      className="rounded-md border border-white/15 px-2 py-1 text-xs text-command-muted"
+                      title="Move Down"
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateListRows(value, onChange, (rows) => rows.filter((_, i) => i !== index))}
+                      className="rounded-md border border-white/15 px-2 py-1 text-xs text-command-muted"
+                      title="Remove"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <Field
+                label="Paste / Import Rows"
+                value={formatRows(value.listRows)}
+                onChange={(next) => setValue(value, "listRows", parseRows(next), onChange)}
+                multiline
+                placeholder={"P | Trevor\n7 | Sam Jones"}
+              />
+            </div>
           </div>
         ) : null}
       </div>
