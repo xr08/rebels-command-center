@@ -25,7 +25,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
   };
   const safeOptions: TemplateOptions = {
     ...baseOptions,
-    showSponsorStrip: baseOptions.customizations?.showSponsorStrip ?? baseOptions.showSponsorStrip
+    showSponsorStrip: false
   };
   const styleVariant = safeOptions.styleVariant ?? "classic-green";
   const layout = getTemplateLayout(safeOptions.aspectRatio, layoutKind, safeOptions.showSponsorStrip);
@@ -48,11 +48,11 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
 
   const overlayByVariant = {
     "classic-green": `linear-gradient(160deg, ${primaryColor}F0 0%, #022016F5 58%, #02150F 100%)`,
-    "photo-overlay": "linear-gradient(170deg, rgba(2, 19, 13, 0.28) 0%, rgba(2, 19, 13, 0.7) 48%, rgba(2, 19, 13, 0.9) 100%)",
-    "bold-gold": `linear-gradient(165deg, ${accentColor}F2 0%, ${primaryColor}EE 54%, #02150F 100%)`,
+    "photo-gradient-green": `linear-gradient(90deg, ${primaryColor}F2 0%, ${primaryColor}B8 52%, rgba(4,66,41,0.16) 100%)`,
+    "photo-gradient-gold": `linear-gradient(90deg, ${accentColor}F0 0%, ${accentColor}A8 52%, rgba(255,205,0,0.12) 100%)`,
     "minimal-board": "linear-gradient(180deg, rgba(3, 34, 23, 0.98) 0%, rgba(3, 34, 23, 0.98) 100%)",
     "juniors-energy": `radial-gradient(circle at 15% 20%, ${accentColor}50 0%, transparent 38%), linear-gradient(145deg, ${primaryColor}F2 0%, #022016F5 62%, #031a12 100%)`,
-    "sponsor-clean": "linear-gradient(180deg, rgba(4, 66, 41, 0.92) 0%, rgba(4, 66, 41, 0.86) 60%, rgba(4, 66, 41, 0.82) 100%)"
+    "team-list-photo": `linear-gradient(90deg, #02150FF5 0%, ${primaryColor}E6 60%, rgba(4,66,41,0.08) 100%)`
   } as const;
   const overlayOpacityByStrength = {
     none: 0,
@@ -64,27 +64,24 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
 
   const titleClassByVariant = {
     "classic-green": "text-4xl md:text-5xl",
-    "photo-overlay": "text-4xl md:text-5xl",
-    "bold-gold": "text-4xl md:text-5xl text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.2)]",
+    "photo-gradient-green": "text-4xl md:text-5xl",
+    "photo-gradient-gold": "text-4xl md:text-5xl text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.2)]",
     "minimal-board": "text-3xl md:text-4xl",
     "juniors-energy": "text-4xl md:text-5xl",
-    "sponsor-clean": "text-3xl md:text-4xl"
+    "team-list-photo": "text-4xl md:text-5xl"
   } as const;
 
   const headerTextClassByVariant = {
     "classic-green": "text-white",
-    "photo-overlay": "text-white",
-    "bold-gold": "text-black",
+    "photo-gradient-green": "text-white",
+    "photo-gradient-gold": "text-black",
     "minimal-board": "text-white",
     "juniors-energy": "text-white",
-    "sponsor-clean": "text-white"
+    "team-list-photo": "text-white"
   } as const;
 
-  const clubColor = styleVariant === "bold-gold" ? "#044229" : accentColor;
+  const clubColor = styleVariant === "photo-gradient-gold" ? "#044229" : accentColor;
   const dividerColor = styleVariant === "minimal-board" ? "rgba(255, 255, 255, 0.45)" : accentColor;
-  const sponsorBarClass = styleVariant === "sponsor-clean"
-    ? "rounded-xl border border-white/30 bg-white/10 px-4 py-2 backdrop-blur-sm"
-    : "rounded-xl border border-white/20 bg-black/30 px-4 py-2 backdrop-blur-sm";
   const gridTemplateRows = layout.gridRows.map((value) => `${value}fr`).join(" ");
 
   return (
@@ -110,7 +107,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
           <div className="absolute -left-20 bottom-24 h-56 w-56 rounded-full bg-black/25" />
         </>
       ) : null}
-      <div className={`absolute inset-x-0 bottom-0 h-28 ${styleVariant === "bold-gold" ? "bg-gradient-to-t from-black/30 to-transparent" : "bg-gradient-to-t from-black/65 to-transparent"}`} />
+      <div className={`absolute inset-x-0 bottom-0 h-28 ${styleVariant === "photo-gradient-gold" ? "bg-gradient-to-t from-black/30 to-transparent" : "bg-gradient-to-t from-black/65 to-transparent"}`} />
 
       <div
         className={`relative z-10 grid h-full ${layout.framePaddingClass} ${styleVariant === "minimal-board" ? "pt-5 md:pt-6" : ""}`}
@@ -126,7 +123,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
                 {clubName}
               </p>
               <h3 className={`mt-2 font-black leading-[0.95] tracking-tight ${titleClassByVariant[styleVariant]} ${headerTextClassByVariant[styleVariant]}`}>{displayTitle}</h3>
-              <p className={`mt-2 text-sm font-medium md:text-base ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>{displaySubtitle}</p>
+              <p className={`mt-2 text-sm font-medium md:text-base ${styleVariant === "photo-gradient-gold" ? "text-black/90" : "text-white/90"}`}>{displaySubtitle}</p>
             </div>
             {safeOptions.showLogo && logoPath ? (
               <Image
@@ -134,7 +131,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
                 alt={clubName}
                 width={114}
                 height={114}
-                className={`h-[96px] w-[96px] rounded-full p-1.5 md:h-[114px] md:w-[114px] ${styleVariant === "bold-gold" ? "border border-black/20 bg-white/70" : "border border-white/20 bg-white/10"}`}
+                className={`h-[96px] w-[96px] rounded-full p-1.5 md:h-[114px] md:w-[114px] ${styleVariant === "photo-gradient-gold" ? "border border-black/20 bg-white/70" : "border border-white/20 bg-white/10"}`}
               />
             ) : null}
           </div>
@@ -145,15 +142,7 @@ export function TemplateFrame({ title, subtitle, clubName, primaryColor, accentC
         <div className={`self-stretch ${layout.heroClass}`} />
 
         <div className={`${layout.contentClass} flex flex-col ${layout.contentJustifyClass} self-stretch`}>{children}</div>
-
-        {layout.showFooter ? (
-          <footer className={`${layout.footerClass} flex items-end self-stretch`}>
-            <div className={sponsorBarClass}>
-            <p className={`text-[10px] uppercase tracking-[0.22em] ${styleVariant === "bold-gold" ? "text-black/70" : "text-white/70"}`}>Proudly Supported By</p>
-            <p className={`mt-1 text-sm font-semibold ${styleVariant === "bold-gold" ? "text-black/90" : "text-white/90"}`}>Fremantle Rebels Partners</p>
-            </div>
-          </footer>
-        ) : null}
+        <div className={layout.footerClass} />
       </div>
     </div>
   );

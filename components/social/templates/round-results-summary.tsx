@@ -113,16 +113,16 @@ export function RoundResultsSummaryTemplate({ fixtures, options, brand }: Props)
   const dateLabel = formatRoundDateRange(fixtures);
   const panelClass = styleVariant === "minimal-board"
     ? "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-white/30 bg-black/20 p-3 md:p-4"
-    : styleVariant === "bold-gold"
+    : styleVariant === "photo-gradient-gold"
       ? "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-black/15 bg-white/20 p-3 backdrop-blur-sm md:p-4"
       : "flex h-full flex-col gap-2 overflow-hidden rounded-2xl border border-white/20 bg-black/35 p-3 backdrop-blur-sm md:p-4";
-  const rowClass = styleVariant === "bold-gold"
+  const rowClass = styleVariant === "photo-gradient-gold"
     ? `grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg border border-black/10 bg-white/30 ${isDense ? "px-2 py-1" : isCompact ? "px-2.5 py-1.5" : "px-3 py-2"} ${isDense ? "text-[11px]" : "text-sm"}`
     : `grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg border border-white/10 bg-white/5 ${isDense ? "px-2 py-1" : isCompact ? "px-2.5 py-1.5" : "px-3 py-2"} ${isDense ? "text-[11px]" : "text-sm"}`;
-  const rowTextClass = styleVariant === "bold-gold"
+  const rowTextClass = styleVariant === "photo-gradient-gold"
     ? "truncate font-semibold leading-tight text-black"
     : "truncate font-semibold leading-tight text-white";
-  const scoreClass = styleVariant === "bold-gold"
+  const scoreClass = styleVariant === "photo-gradient-gold"
     ? "rounded bg-black/10 px-2 py-1 text-[10px] font-bold text-black"
     : "rounded bg-command-accent/20 px-2 py-1 text-[10px] font-bold text-command-accent";
 

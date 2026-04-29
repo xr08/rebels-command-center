@@ -222,7 +222,10 @@ export function drawImageCover(
   targetY: number,
   targetWidth: number,
   targetHeight: number,
-  position: "center" | "top" | "bottom" | "left" | "right" = "center"
+  position: "center" | "top" | "bottom" | "left" | "right" = "center",
+  positionX = 50,
+  positionY = 50,
+  zoom = 1
 ) {
   // @ts-expect-error width/height exists for supported canvas image sources.
   const sourceWidth = image.width as number;
@@ -237,12 +240,22 @@ export function drawImageCover(
   let sw = sourceWidth;
   let sh = sourceHeight;
 
+  const safeZoom = Math.max(1, Math.min(2.5, zoom || 1));
+
   if (sourceRatio > targetRatio) {
-    sw = sourceHeight * targetRatio;
-    sx = position === "left" ? 0 : position === "right" ? sourceWidth - sw : (sourceWidth - sw) / 2;
+    sh = sourceHeight / safeZoom;
+    sw = sh * targetRatio;
+    const presetX = position === "left" ? 0 : position === "right" ? 100 : positionX;
+    const presetY = position === "top" ? 0 : position === "bottom" ? 100 : positionY;
+    sx = (sourceWidth - sw) * Math.max(0, Math.min(100, presetX)) / 100;
+    sy = (sourceHeight - sh) * Math.max(0, Math.min(100, presetY)) / 100;
   } else {
-    sh = sourceWidth / targetRatio;
-    sy = position === "top" ? 0 : position === "bottom" ? sourceHeight - sh : (sourceHeight - sh) / 2;
+    sw = sourceWidth / safeZoom;
+    sh = sw / targetRatio;
+    const presetX = position === "left" ? 0 : position === "right" ? 100 : positionX;
+    const presetY = position === "top" ? 0 : position === "bottom" ? 100 : positionY;
+    sx = (sourceWidth - sw) * Math.max(0, Math.min(100, presetX)) / 100;
+    sy = (sourceHeight - sh) * Math.max(0, Math.min(100, presetY)) / 100;
   }
 
   ctx.drawImage(image, sx, sy, sw, sh, targetX, targetY, targetWidth, targetHeight);
@@ -255,26 +268,24 @@ export function drawImageContain(
   targetY: number,
   targetWidth: number,
   targetHeight: number,
-  position: "center" | "top" | "bottom" | "left" | "right" = "center"
+  position: "center" | "top" | "bottom" | "left" | "right" = "center",
+  positionX = 50,
+  positionY = 50,
+  zoom = 1
 ) {
   // @ts-expect-error width/height exists for supported canvas image sources.
   const sourceWidth = image.width as number;
   // @ts-expect-error width/height exists for supported canvas image sources.
   const sourceHeight = image.height as number;
 
-  const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
+  const safeZoom = Math.max(1, Math.min(2.5, zoom || 1));
+  const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight) * safeZoom;
   const drawWidth = sourceWidth * scale;
   const drawHeight = sourceHeight * scale;
-  const dx = position === "left"
-    ? targetX
-    : position === "right"
-      ? targetX + targetWidth - drawWidth
-      : targetX + (targetWidth - drawWidth) / 2;
-  const dy = position === "top"
-    ? targetY
-    : position === "bottom"
-      ? targetY + targetHeight - drawHeight
-      : targetY + (targetHeight - drawHeight) / 2;
+  const presetX = position === "left" ? 0 : position === "right" ? 100 : positionX;
+  const presetY = position === "top" ? 0 : position === "bottom" ? 100 : positionY;
+  const dx = targetX + (targetWidth - drawWidth) * Math.max(0, Math.min(100, presetX)) / 100;
+  const dy = targetY + (targetHeight - drawHeight) * Math.max(0, Math.min(100, presetY)) / 100;
 
   ctx.drawImage(image, dx, dy, drawWidth, drawHeight);
 }

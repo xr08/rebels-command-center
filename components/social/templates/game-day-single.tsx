@@ -16,13 +16,13 @@ export function GameDaySingleTemplate({ data, options, brand }: Props) {
   const styleVariant = options.styleVariant ?? "classic-green";
   const cardClass = styleVariant === "minimal-board"
     ? "space-y-4 rounded-2xl border border-white/30 bg-black/20 p-4 md:p-5"
-    : styleVariant === "bold-gold"
+    : styleVariant === "photo-gradient-gold"
       ? "space-y-4 rounded-2xl border border-black/15 bg-white/20 p-4 backdrop-blur-sm md:p-5"
       : "space-y-4 rounded-2xl border border-white/20 bg-black/35 p-4 backdrop-blur-sm md:p-5";
-  const infoCardClass = styleVariant === "bold-gold"
+  const infoCardClass = styleVariant === "photo-gradient-gold"
     ? "rounded-lg border border-black/15 bg-white/30 px-3 py-2"
     : "rounded-lg border border-white/15 bg-white/5 px-3 py-2";
-  const textClass = styleVariant === "bold-gold" ? "text-black" : "text-white";
+  const textClass = styleVariant === "photo-gradient-gold" ? "text-black" : "text-white";
 
   return (
     <TemplateFrame

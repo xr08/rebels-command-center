@@ -15,8 +15,8 @@ export type PostStatus = "draft" | "posted";
 
 export type StyleVariant =
   | "classic-green"
-  | "photo-overlay"
-  | "bold-gold"
+  | "photo-gradient-green"
+  | "photo-gradient-gold"
   | "minimal-board"
   | "juniors-energy"
-  | "sponsor-clean";
+  | "team-list-photo";

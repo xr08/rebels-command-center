@@ -6,7 +6,7 @@ import { Field } from "./field";
 type Props = {
   value: SocialTemplateCustomizations;
   onChange: (value: SocialTemplateCustomizations) => void;
-  sponsorSupported: boolean;
+  showListControls: boolean;
 };
 
 function setValue<K extends keyof SocialTemplateCustomizations>(
@@ -18,7 +18,24 @@ function setValue<K extends keyof SocialTemplateCustomizations>(
   onChange({ ...current, [key]: value });
 }
 
-export function TemplateCustomizer({ value, onChange, sponsorSupported }: Props) {
+function formatRows(rows: SocialTemplateCustomizations["listRows"]) {
+  return (rows ?? []).map((row) => `${row.label} | ${row.name}`).join("\n");
+}
+
+function parseRows(value: string): NonNullable<SocialTemplateCustomizations["listRows"]> {
+  return value
+    .split("\n")
+    .map((line) => {
+      const [label = "", ...nameParts] = line.split("|");
+      return {
+        label: label.trim(),
+        name: nameParts.join("|").trim()
+      };
+    })
+    .filter((row) => row.label || row.name);
+}
+
+export function TemplateCustomizer({ value, onChange, showListControls }: Props) {
   return (
     <section className="glass-panel rounded-2xl p-4">
       <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Safe Customisation</p>
@@ -49,12 +66,6 @@ export function TemplateCustomizer({ value, onChange, sponsorSupported }: Props)
             <input type="checkbox" checked={value.showRound !== false} onChange={(event) => setValue(value, "showRound", event.target.checked, onChange)} />
             <span>Round</span>
           </label>
-          {sponsorSupported ? (
-            <label className="inline-flex items-center gap-2 text-sm text-command-muted">
-              <input type="checkbox" checked={value.showSponsorStrip !== false} onChange={(event) => setValue(value, "showSponsorStrip", event.target.checked, onChange)} />
-              <span>Sponsor</span>
-            </label>
-          ) : null}
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -97,6 +108,66 @@ export function TemplateCustomizer({ value, onChange, sponsorSupported }: Props)
             </select>
           </label>
         </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <label className="space-y-1">
+            <span className="text-xs text-command-muted">Horizontal Position</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={value.backgroundPositionX ?? 50}
+              onChange={(event) => setValue(value, "backgroundPositionX", Number(event.target.value), onChange)}
+              className="w-full accent-[#FFCD00]"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-command-muted">Vertical Position</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={value.backgroundPositionY ?? 50}
+              onChange={(event) => setValue(value, "backgroundPositionY", Number(event.target.value), onChange)}
+              className="w-full accent-[#FFCD00]"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-command-muted">Zoom</span>
+            <input
+              type="range"
+              min={1}
+              max={2.5}
+              step={0.05}
+              value={value.backgroundZoom ?? 1}
+              onChange={(event) => setValue(value, "backgroundZoom", Number(event.target.value), onChange)}
+              className="w-full accent-[#FFCD00]"
+            />
+          </label>
+        </div>
+
+        {showListControls ? (
+          <div className="space-y-3 rounded-xl border border-white/10 bg-black/15 p-3">
+            <Field
+              label="List Title"
+              value={value.listTitle ?? "TEAM LIST"}
+              onChange={(next) => setValue(value, "listTitle", next, onChange)}
+            />
+            <Field
+              label="List Subtitle"
+              value={value.listSubtitle ?? ""}
+              onChange={(next) => setValue(value, "listSubtitle", next, onChange)}
+              placeholder="Optional"
+            />
+            <Field
+              label="Rows"
+              value={formatRows(value.listRows)}
+              onChange={(next) => setValue(value, "listRows", parseRows(next), onChange)}
+              multiline
+              placeholder={"P | Player Name\nC | Player Name\n1B | Player Name"}
+            />
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -2,20 +2,20 @@ import type { StyleVariant } from "@/types/social";
 
 export const STYLE_VARIANTS: StyleVariant[] = [
   "classic-green",
-  "photo-overlay",
-  "bold-gold",
+  "photo-gradient-green",
+  "photo-gradient-gold",
   "minimal-board",
   "juniors-energy",
-  "sponsor-clean"
+  "team-list-photo"
 ];
 
 export const STYLE_VARIANT_LABELS: Record<StyleVariant, string> = {
   "classic-green": "Classic Green",
-  "photo-overlay": "Photo Overlay",
-  "bold-gold": "Bold Gold",
+  "photo-gradient-green": "Photo Gradient - Green",
+  "photo-gradient-gold": "Photo Gradient - Gold",
   "minimal-board": "Minimal Board",
   "juniors-energy": "Juniors Energy",
-  "sponsor-clean": "Sponsor Clean"
+  "team-list-photo": "Team List Photo"
 };
 
 export function normalizeStyleVariant(value: unknown): StyleVariant {

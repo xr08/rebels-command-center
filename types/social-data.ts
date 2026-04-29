@@ -91,8 +91,17 @@ export type SocialTemplateCustomizations = {
   showSponsorStrip?: boolean;
   backgroundFit?: "cover" | "contain";
   backgroundPosition?: "center" | "top" | "bottom" | "left" | "right";
+  backgroundPositionX?: number;
+  backgroundPositionY?: number;
+  backgroundZoom?: number;
   overlayStrength?: "none" | "light" | "medium" | "strong";
   templateVariation?: string;
+  listTitle?: string;
+  listSubtitle?: string;
+  listRows?: {
+    label: string;
+    name: string;
+  }[];
 };
 
 export type CustomPostFormData = {

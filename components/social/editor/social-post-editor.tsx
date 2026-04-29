@@ -93,10 +93,16 @@ const defaultCustomizations: SocialTemplateCustomizations = {
   showVenue: true,
   showTime: true,
   showRound: true,
-  showSponsorStrip: true,
+  showSponsorStrip: false,
   backgroundFit: "cover",
   backgroundPosition: "center",
-  overlayStrength: "medium"
+  backgroundPositionX: 50,
+  backgroundPositionY: 50,
+  backgroundZoom: 1,
+  overlayStrength: "medium",
+  listTitle: "TEAM LIST",
+  listSubtitle: "",
+  listRows: []
 };
 
 function inferResultOutcome(fixture: FixtureRecord): TemplateFixtureProps["resultOutcome"] {
@@ -189,7 +195,6 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const [message, setMessage] = useState("");
   const [aspectRatio, setAspectRatio] = useState<TemplateOptions["aspectRatio"]>("square");
   const [styleVariant, setStyleVariant] = useState<StyleVariant>("classic-green");
-  const [showSponsorStrip, setShowSponsorStrip] = useState(true);
   const [showLogo] = useState(true);
   const [backgroundAssetId, setBackgroundAssetId] = useState("");
   const [customForm, setCustomForm] = useState<CustomPostFormData>(emptyCustomForm);
@@ -203,7 +208,11 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
     const payload = initialDraft.custom_payload ?? {};
     setCaption(initialDraft.caption);
-    setCustomizations(readCustomizations(payload));
+    const draftCustomizations = readCustomizations(payload);
+    setCustomizations(draftCustomizations);
+    if (draftCustomizations.templateVariation) {
+      setStyleVariant(normalizeStyleVariant(draftCustomizations.templateVariation));
+    }
 
     if (initialDraft.custom_post_type) {
       setBuilderMode("custom");
@@ -250,7 +259,6 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   useEffect(() => {
     if (workflowMode === "quick") {
       setComposeMode("single");
-      setShowSponsorStrip(false);
       setCustomizations((prev) => ({ ...prev, showSponsorStrip: false }));
     }
   }, [workflowMode]);
@@ -370,7 +378,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const selectedBackgroundId = builderMode === "custom" ? customForm.selectedMediaId : backgroundAssetId;
   const selectedBackgroundUrl = mediaOptions.find((asset) => asset.id === selectedBackgroundId)?.publicUrl ?? null;
   const selectedLogoUrl = logoOptions.find((asset) => asset.id === customForm.selectedLogoId)?.publicUrl ?? null;
-  const effectiveShowSponsorStrip = customizations.showSponsorStrip ?? showSponsorStrip;
+  const effectiveShowSponsorStrip = false;
 
   const customData: CustomTemplateData | null = builderMode === "custom" && selectedTemplate
     ? {
@@ -390,6 +398,11 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       showSponsorStrip: effectiveShowSponsorStrip,
       templateVariation: styleVariant
     }
+  };
+  const persistedCustomizations: SocialTemplateCustomizations = {
+    ...customizations,
+    showSponsorStrip: effectiveShowSponsorStrip,
+    templateVariation: styleVariant
   };
 
   const exportOptions: TemplateOptions = {
@@ -529,7 +542,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         template_id: null,
         post_type: "preview_single",
         custom_post_type: selectedTemplate.post_type,
-        custom_payload: { ...customForm, customizations },
+        custom_payload: { ...customForm, customizations: persistedCustomizations },
         caption: captionToSave,
         status,
         generated_by: null
@@ -555,7 +568,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         template_id: selectedTemplate.id,
         post_type: selectedTemplate.post_type,
         custom_post_type: null,
-        custom_payload: { customizations },
+        custom_payload: { customizations: persistedCustomizations },
         caption: captionToSave,
         status,
         generated_by: null
@@ -639,11 +652,8 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         value={customizations}
         onChange={(next) => {
           setCustomizations(next);
-          if (typeof next.showSponsorStrip === "boolean") {
-            setShowSponsorStrip(next.showSponsorStrip);
-          }
         }}
-        sponsorSupported
+        showListControls={styleVariant === "team-list-photo"}
       />
     </>
   );
