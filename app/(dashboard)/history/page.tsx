@@ -1,6 +1,6 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { HistoryRowActions } from "@/components/social/history/history-row-actions";
 import { getSocialPosts } from "@/lib/social/queries";
-import Link from "next/link";
 
 export default async function HistoryPage() {
   const posts = await getSocialPosts();
@@ -24,9 +24,9 @@ export default async function HistoryPage() {
               {post.fixtures?.round_label} vs {post.fixtures?.opponent_name}
             </p>
             <p className="mt-1 text-xs text-command-muted">{new Date(post.created_at).toLocaleString("en-AU")}</p>
-            <Link href={`/social?draft=${post.id}`} className="mt-3 inline-block rounded-md border border-command-accent/50 px-3 py-1 text-xs text-command-accent hover:bg-command-accent/10">
-              {post.status === "draft" ? "Open Draft" : "Reuse Post"}
-            </Link>
+            <div className="mt-3">
+              <HistoryRowActions id={post.id} isDraft={post.status === "draft"} compact />
+            </div>
           </article>
         ))}
       </div>
@@ -62,9 +62,7 @@ export default async function HistoryPage() {
                   {new Date(post.created_at).toLocaleString("en-AU")}
                 </td>
                 <td className="px-4 py-3">
-                  <Link href={`/social?draft=${post.id}`} className="rounded-md border border-command-accent/50 px-3 py-1 text-xs text-command-accent hover:bg-command-accent/10">
-                    {post.status === "draft" ? "Open Draft" : "Reuse"}
-                  </Link>
+                  <HistoryRowActions id={post.id} isDraft={post.status === "draft"} />
                 </td>
               </tr>
             ))}

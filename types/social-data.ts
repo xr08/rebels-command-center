@@ -85,6 +85,8 @@ export type TemplateOptions = {
 export type SocialTemplateCustomizations = {
   headlineOverride?: string;
   subheadingOverride?: string;
+  panelHeadingOverride?: string;
+  panelSubheadingOverride?: string;
   teamNameOverride?: string;
   opponentNameOverride?: string;
   showVenue?: boolean;
@@ -97,6 +99,8 @@ export type SocialTemplateCustomizations = {
   backgroundPositionY?: number;
   backgroundZoom?: number;
   overlayStrength?: "none" | "light" | "medium" | "strong";
+  overlayOpacity?: number;
+  textColorToken?: "white" | "rebels-green" | "rebels-gold" | "near-black";
   templateVariation?: string;
   listTitle?: string;
   listSubtitle?: string;

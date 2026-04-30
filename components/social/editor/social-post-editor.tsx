@@ -10,6 +10,7 @@ import { FixturePicker } from "@/components/social/studio/fixture-picker";
 import { MediaPicker, type MediaOption } from "@/components/social/studio/media-picker";
 import { ModeTabs } from "@/components/social/studio/mode-tabs";
 import { SocialStudioShell } from "@/components/social/studio/social-studio-shell";
+import { PreviewAdjustments } from "@/components/social/studio/preview-adjustments";
 import { TemplateControls } from "@/components/social/studio/template-controls";
 import { TemplateCustomizer } from "@/components/social/studio/template-customizer";
 import { isCanvasTemplateKey, renderPostToDataUrl } from "@/lib/social/canvas/render-post";
@@ -100,6 +101,7 @@ const defaultCustomizations: SocialTemplateCustomizations = {
   backgroundPositionY: 50,
   backgroundZoom: 1,
   overlayStrength: "medium",
+  overlayOpacity: 34,
   listTitle: "TEAM LIST",
   listSubtitle: "",
   listRows: []
@@ -176,9 +178,20 @@ function formatFixtureTime(value: string) {
 }
 
 function readCustomizations(payload: SocialPostDraftPayload | null | undefined) {
+  const raw = payload?.customizations ?? {};
+  const overlayOpacity = typeof raw.overlayOpacity === "number"
+    ? raw.overlayOpacity
+    : raw.overlayStrength === "none"
+      ? 0
+      : raw.overlayStrength === "light"
+        ? 18
+        : raw.overlayStrength === "strong"
+          ? 50
+          : 34;
   return {
     ...defaultCustomizations,
-    ...(payload?.customizations ?? {})
+    ...raw,
+    overlayOpacity
   };
 }
 
@@ -664,14 +677,17 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   );
 
   const preview = (
-    <CanvasPreviewPanel
-      template={selectedTemplate}
-      data={singleData}
-      customData={customData}
-      summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
-      options={previewOptions}
-      brand={previewBrand}
-    />
+    <div className="space-y-4">
+      <CanvasPreviewPanel
+        template={selectedTemplate}
+        data={singleData}
+        customData={customData}
+        summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+        options={previewOptions}
+        brand={previewBrand}
+      />
+      <PreviewAdjustments value={customizations} onChange={setCustomizations} />
+    </div>
   );
 
   const captionPanel = (

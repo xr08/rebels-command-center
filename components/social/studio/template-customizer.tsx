@@ -64,6 +64,20 @@ export function TemplateCustomizer({ value, onChange, showListControls }: Props)
         />
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           <Field
+            label="Summary Box Heading"
+            value={value.panelHeadingOverride ?? ""}
+            onChange={(next) => setValue(value, "panelHeadingOverride", next, onChange)}
+            placeholder="Optional (round summaries)"
+          />
+          <Field
+            label="Summary Box Subheading"
+            value={value.panelSubheadingOverride ?? ""}
+            onChange={(next) => setValue(value, "panelSubheadingOverride", next, onChange)}
+            placeholder="Optional (round summaries)"
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <Field
             label="Home Team Override"
             value={value.teamNameOverride ?? ""}
             onChange={(next) => setValue(value, "teamNameOverride", next, onChange)}
@@ -119,54 +133,17 @@ export function TemplateCustomizer({ value, onChange, showListControls }: Props)
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-xs text-command-muted">Overlay</span>
+            <span className="text-xs text-command-muted">Text Colour</span>
             <select
-              value={value.overlayStrength ?? "medium"}
-              onChange={(event) => setValue(value, "overlayStrength", event.target.value as SocialTemplateCustomizations["overlayStrength"], onChange)}
+              value={value.textColorToken ?? "white"}
+              onChange={(event) => setValue(value, "textColorToken", event.target.value as SocialTemplateCustomizations["textColorToken"], onChange)}
               className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm"
             >
-              <option value="none">None</option>
-              <option value="light">Light</option>
-              <option value="medium">Medium</option>
-              <option value="strong">Strong</option>
+              <option value="white">White</option>
+              <option value="rebels-green">Rebels Green</option>
+              <option value="rebels-gold">Rebels Gold</option>
+              <option value="near-black">Near Black</option>
             </select>
-          </label>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <label className="space-y-1">
-            <span className="text-xs text-command-muted">Horizontal Position</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={value.backgroundPositionX ?? 50}
-              onChange={(event) => setValue(value, "backgroundPositionX", Number(event.target.value), onChange)}
-              className="w-full accent-[#FFCD00]"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs text-command-muted">Vertical Position</span>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={value.backgroundPositionY ?? 50}
-              onChange={(event) => setValue(value, "backgroundPositionY", Number(event.target.value), onChange)}
-              className="w-full accent-[#FFCD00]"
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-xs text-command-muted">Zoom</span>
-            <input
-              type="range"
-              min={1}
-              max={2.5}
-              step={0.05}
-              value={value.backgroundZoom ?? 1}
-              onChange={(event) => setValue(value, "backgroundZoom", Number(event.target.value), onChange)}
-              className="w-full accent-[#FFCD00]"
-            />
           </label>
         </div>
 

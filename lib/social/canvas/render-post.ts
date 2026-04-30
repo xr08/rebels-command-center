@@ -139,6 +139,22 @@ function getOverlayAlpha(strength: SocialTemplateCustomizations["overlayStrength
   return 0.34;
 }
 
+function resolveOverlayAlpha(custom?: SocialTemplateCustomizations) {
+  if (typeof custom?.overlayOpacity === "number") {
+    const normalized = Math.max(0, Math.min(100, custom.overlayOpacity));
+    return normalized / 100;
+  }
+  return getOverlayAlpha(custom?.overlayStrength);
+}
+
+function resolveTextToken(token: SocialTemplateCustomizations["textColorToken"], fallback = TEXT) {
+  if (token === "rebels-green") return REBELS_GREEN;
+  if (token === "rebels-gold") return REBELS_GOLD;
+  if (token === "near-black") return "#0B120F";
+  if (token === "white") return TEXT;
+  return fallback;
+}
+
 async function drawPhoto(
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -213,7 +229,7 @@ async function drawBaseBackground(
   }
 
   const stops = getOverlayStops(options.customizations?.overlayStrength);
-  const alpha = getOverlayAlpha(options.customizations?.overlayStrength);
+  const alpha = resolveOverlayAlpha(options.customizations);
   if (stops && alpha > 0) {
     const overlay = ctx.createLinearGradient(0, 0, 0, height);
     overlay.addColorStop(0, hexToRgba(REBELS_DARK, Math.max(alpha - 0.06, 0.05)));
@@ -261,7 +277,8 @@ async function drawClassicHeader(
 ) {
   const variation = getVariation(options);
   const gold = brand.accentColor || REBELS_GOLD;
-  const textColor = variation === "photo-gradient-gold" ? brand.primaryColor || REBELS_GREEN : TEXT;
+  const defaultText = variation === "photo-gradient-gold" ? brand.primaryColor || REBELS_GREEN : TEXT;
+  const textColor = resolveTextToken(options.customizations?.textColorToken, defaultText);
 
   ctx.fillStyle = variation === "minimal-board" ? "rgba(255,255,255,0.72)" : gold;
   ctx.font = `900 56px ${FONT_STACK}`;
@@ -272,7 +289,9 @@ async function drawClassicHeader(
   ctx.font = `900 ${headingSize}px ${FONT_STACK}`;
   ctx.fillText(heading, 62, 192);
 
-  ctx.fillStyle = variation === "photo-gradient-gold" ? hexToRgba(REBELS_DARK, 0.82) : "rgba(232, 238, 236, 0.9)";
+  ctx.fillStyle = variation === "photo-gradient-gold"
+    ? resolveTextToken(options.customizations?.textColorToken, hexToRgba(REBELS_DARK, 0.82))
+    : "rgba(232, 238, 236, 0.9)";
   const subtitleSize = fitFontSize(ctx, subtitle, FONT_STACK, 700, 50, 22, 680);
   ctx.font = `700 ${subtitleSize}px ${FONT_STACK}`;
   ctx.fillText(subtitle, 62, 260);
@@ -361,7 +380,8 @@ function drawClassicSingle(
 
   if (isResult) {
     const [leftScore, rightScore] = (data.score ?? "- -").split("-");
-    ctx.fillStyle = TEXT;
+    const teamText = resolveTextToken(options.customizations?.textColorToken, TEXT);
+    ctx.fillStyle = teamText;
     ctx.font = `900 110px ${FONT_STACK}`;
     drawCenteredText(ctx, data.isBye ? "BYE" : (leftScore || "-"), leftCenter, scoreTop + 132);
     drawCenteredText(ctx, data.isBye ? "BYE" : (rightScore || "-"), rightCenter, scoreTop + 132);
@@ -371,7 +391,8 @@ function drawClassicSingle(
   } else {
     const leftName = options.customizations?.teamNameOverride?.trim() || data.teamName || "Rebels";
     const rightName = options.customizations?.opponentNameOverride?.trim() || data.opponent;
-    ctx.fillStyle = TEXT;
+    const scoreText = resolveTextToken(options.customizations?.textColorToken, TEXT);
+    ctx.fillStyle = scoreText;
     const leftNameSize = fitFontSize(ctx, leftName, FONT_STACK, 900, 56, 30, columnWidth - 28);
     const rightNameSize = fitFontSize(ctx, rightName, FONT_STACK, 900, 56, 30, columnWidth - 28);
     ctx.font = `900 ${leftNameSize}px ${FONT_STACK}`;
@@ -433,23 +454,27 @@ async function drawPhotoGradientSingle(
   ctx.fillStyle = shade;
   ctx.fillRect(panelX, 0, panelWidth, height);
 
-  const overlayAlpha = getOverlayAlpha(options.customizations?.overlayStrength);
+  const overlayAlpha = resolveOverlayAlpha(options.customizations);
   ctx.fillStyle = hexToRgba(REBELS_DARK, overlayAlpha > 0 ? Math.max(overlayAlpha * 0.7, 0.12) : 0.08);
   ctx.fillRect(0, 0, width, height);
 
   await drawLogo(ctx, brand, 62, 60, 126, isGold ? hexToRgba(green, 0.35) : "rgba(255,255,255,0.3)");
 
-  const textColor = isGold ? green : TEXT;
+  const textColor = resolveTextToken(options.customizations?.textColorToken, isGold ? green : TEXT);
   const softText = isGold ? hexToRgba(REBELS_DARK, 0.72) : "rgba(255,255,255,0.78)";
   const accent = isGold ? green : gold;
 
+  const brandLabelX = isGold ? 170 : 210;
   ctx.fillStyle = accent;
   ctx.font = `900 34px ${FONT_STACK}`;
-  ctx.fillText((brand.clubName || "Fremantle Rebels").toUpperCase(), 210, 108);
+  ctx.fillText((brand.clubName || "Fremantle Rebels").toUpperCase(), brandLabelX, 108);
 
+  const headingY = isGold
+    ? (height >= 1300 ? 324 : 282)
+    : (height >= 1300 ? 290 : 250);
   ctx.fillStyle = textColor;
   ctx.font = `900 ${fitFontSize(ctx, heading, FONT_STACK, 900, 118, 58, panelWidth - 118)}px ${FONT_STACK}`;
-  ctx.fillText(heading, 62, height >= 1300 ? 290 : 250);
+  ctx.fillText(heading, 62, headingY);
 
   ctx.fillStyle = softText;
   ctx.font = `800 ${fitFontSize(ctx, subtitle, FONT_STACK, 800, 42, 24, panelWidth - 118)}px ${FONT_STACK}`;
@@ -575,6 +600,8 @@ function drawSummaryCard(
   const variation = getVariation(options);
   const heading = getDisplayHeading(isResult ? "round_results_summary" : "round_preview_summary", options);
   const subtitle = getSubtitle(isResult ? "round_results_summary" : "round_preview_summary", null, fixtures, options);
+  const panelHeading = options.customizations?.panelHeadingOverride?.trim() || heading;
+  const panelSubtitle = options.customizations?.panelSubheadingOverride?.trim() || subtitle;
   const maxPanelBottom = height - 60;
   const panelWidth = width - 112;
   const grouped = fixtures.reduce<Record<string, FixtureRecord[]>>((acc, fixture) => {
@@ -613,12 +640,13 @@ function drawSummaryCard(
   }
   strokeRoundedRect(ctx, 56, panelTop, panelWidth, panelBottom - panelTop, 28, "rgba(255,255,255,0.18)", 2);
 
-  ctx.fillStyle = TEXT;
-  ctx.font = `900 ${fitFontSize(ctx, heading, FONT_STACK, 900, 64, 36, panelWidth - 56)}px ${FONT_STACK}`;
-  ctx.fillText(heading, 88, panelTop + 76);
+  const summaryText = resolveTextToken(options.customizations?.textColorToken, TEXT);
+  ctx.fillStyle = summaryText;
+  ctx.font = `900 ${fitFontSize(ctx, panelHeading, FONT_STACK, 900, 64, 36, panelWidth - 56)}px ${FONT_STACK}`;
+  ctx.fillText(panelHeading, 88, panelTop + 76);
   ctx.fillStyle = "rgba(255,255,255,0.72)";
-  ctx.font = `700 ${fitFontSize(ctx, subtitle, FONT_STACK, 700, 30, 18, panelWidth - 56)}px ${FONT_STACK}`;
-  ctx.fillText(subtitle, 90, panelTop + 116);
+  ctx.font = `700 ${fitFontSize(ctx, panelSubtitle, FONT_STACK, 700, 30, 18, panelWidth - 56)}px ${FONT_STACK}`;
+  ctx.fillText(panelSubtitle, 90, panelTop + 116);
 
   const listTop = panelTop + 166;
   const listBottom = panelBottom - 26;
