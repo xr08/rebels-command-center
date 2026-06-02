@@ -21,7 +21,7 @@ export default async function DashboardPage() {
       <div className="glass-panel rounded-2xl p-5">
         <h3 className="text-lg font-bold">Quick Actions</h3>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/social" className="rounded-md bg-command-accent px-4 py-2 text-sm font-semibold text-black">
+          <Link href="/social/upcoming" className="rounded-md bg-command-accent px-4 py-2 text-sm font-semibold text-black">
             Open Social Generator
           </Link>
           <Link href="/history" className="rounded-md border border-white/20 px-4 py-2 text-sm">

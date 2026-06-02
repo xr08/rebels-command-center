@@ -13,7 +13,10 @@ Primary Supabase project: `socials-command-center` (`ckrhabmjqfzofmkognuh`).
 ## Routes
 
 - `/dashboard`
-- `/social`
+- `/social` (redirects to `/social/upcoming`)
+- `/social/upcoming`
+- `/social/results`
+- `/social/custom`
 - `/templates`
 - `/media`
 - `/history`

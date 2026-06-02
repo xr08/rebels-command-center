@@ -48,7 +48,11 @@ export function CanvasPreview({ templateKey, data, summaryFixtures, options, bra
   }, [templateKey, data, summaryFixtures, options, brand]);
 
   return (
-    <div className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 shadow-premium ${isPortrait ? "aspect-[4/5] max-w-[500px]" : "aspect-square max-w-[560px]"}`}>
+    <div
+      className={`relative mx-auto w-full overflow-hidden rounded-3xl border border-white/15 shadow-premium ${
+        isPortrait ? "aspect-[4/5] max-w-[680px] xl:max-w-[760px]" : "aspect-square max-w-[760px] xl:max-w-[860px]"
+      }`}
+    >
       <canvas
         ref={canvasRef}
         className="h-full w-full object-contain"

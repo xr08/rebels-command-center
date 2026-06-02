@@ -6,11 +6,12 @@ import { useState } from "react";
 
 type Props = {
   id: string;
+  href: string;
   isDraft: boolean;
   compact?: boolean;
 };
 
-export function HistoryRowActions({ id, isDraft, compact = false }: Props) {
+export function HistoryRowActions({ id, href, isDraft, compact = false }: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -34,7 +35,7 @@ export function HistoryRowActions({ id, isDraft, compact = false }: Props) {
 
   return (
     <div className={`flex ${compact ? "flex-col" : "items-center"} gap-2`}>
-      <Link href={`/social?draft=${id}`} className="rounded-md border border-command-accent/50 px-3 py-1 text-xs text-command-accent hover:bg-command-accent/10">
+      <Link href={href} className="rounded-md border border-command-accent/50 px-3 py-1 text-xs text-command-accent hover:bg-command-accent/10">
         {isDraft ? "Open Draft" : "Reuse"}
       </Link>
       {isDraft ? (

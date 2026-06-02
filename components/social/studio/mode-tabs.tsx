@@ -1,21 +1,14 @@
 "use client";
 
+import type { SocialEditorRoute } from "@/lib/social/editor-route";
 import type { Stream } from "@/types/social";
 
-type BuilderMode = "fixture" | "custom";
-type WorkflowMode = "quick" | "full";
 type ComposeMode = "single" | "summary";
-type ViewMode = "upcoming" | "results";
 
 type Props = {
-  builderMode: BuilderMode;
-  setBuilderMode: (value: BuilderMode) => void;
-  workflowMode: WorkflowMode;
-  setWorkflowMode: (value: WorkflowMode) => void;
+  route: SocialEditorRoute;
   composeMode: ComposeMode;
   setComposeMode: (value: ComposeMode) => void;
-  viewMode: ViewMode;
-  setViewMode: (value: ViewMode) => void;
   stream: Stream;
   setStream: (value: Stream) => void;
   streamOptions: { label: string; value: Stream }[];
@@ -36,68 +29,37 @@ function ToggleButton({ active, children, onClick }: { active: boolean; children
 }
 
 export function ModeTabs({
-  builderMode,
-  setBuilderMode,
-  workflowMode,
-  setWorkflowMode,
+  route,
   composeMode,
   setComposeMode,
-  viewMode,
-  setViewMode,
   stream,
   setStream,
   streamOptions
 }: Props) {
+  if (route === "custom") {
+    return null;
+  }
+
   return (
     <div className="space-y-4">
       <section className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Builder</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Post Format</p>
         <div className="grid grid-cols-2 gap-2">
-          <ToggleButton active={builderMode === "fixture"} onClick={() => setBuilderMode("fixture")}>Fixtures</ToggleButton>
-          <ToggleButton active={builderMode === "custom"} onClick={() => setBuilderMode("custom")}>Custom Post</ToggleButton>
+          <ToggleButton active={composeMode === "single"} onClick={() => setComposeMode("single")}>Single</ToggleButton>
+          <ToggleButton active={composeMode === "summary"} onClick={() => setComposeMode("summary")}>Round Summary</ToggleButton>
         </div>
       </section>
 
-      {builderMode === "fixture" ? (
-        <>
-          <section className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Workflow</p>
-            <div className="grid grid-cols-2 gap-2">
-              <ToggleButton active={workflowMode === "quick"} onClick={() => setWorkflowMode("quick")}>Quick Post</ToggleButton>
-              <ToggleButton active={workflowMode === "full"} onClick={() => setWorkflowMode("full")}>Full Mode</ToggleButton>
-            </div>
-          </section>
-
-          {workflowMode === "full" ? (
-            <section className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Generator Mode</p>
-              <div className="grid grid-cols-2 gap-2">
-                <ToggleButton active={composeMode === "single"} onClick={() => setComposeMode("single")}>Single</ToggleButton>
-                <ToggleButton active={composeMode === "summary"} onClick={() => setComposeMode("summary")}>Round Summary</ToggleButton>
-              </div>
-            </section>
-          ) : null}
-
-          <section className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.18em] text-command-accent">Fixture Feed</p>
-            <div className="grid grid-cols-2 gap-2">
-              <ToggleButton active={viewMode === "upcoming"} onClick={() => setViewMode("upcoming")}>Upcoming</ToggleButton>
-              <ToggleButton active={viewMode === "results"} onClick={() => setViewMode("results")}>Results</ToggleButton>
-            </div>
-          </section>
-
-          <label className="space-y-1">
-            <span className="text-xs text-command-muted">Stream</span>
-            <select value={stream} onChange={(event) => setStream(event.target.value as Stream)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              {streamOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
-      ) : null}
+      <label className="space-y-1">
+        <span className="text-xs text-command-muted">Stream</span>
+        <select value={stream} onChange={(event) => setStream(event.target.value as Stream)} className="w-full rounded-md border border-white/15 bg-black/20 p-2 text-sm">
+          {streamOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

@@ -19,7 +19,7 @@ type Props = {
 
 export function CanvasPreviewPanel({ template, data, customData, summaryFixtures, options, brand }: Props) {
   return (
-    <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#0a1d15] p-4 shadow-premium md:min-h-[620px] md:p-8">
+    <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-[#0a1d15] p-3 shadow-premium md:min-h-[640px] md:p-6 xl:min-h-[760px] xl:p-8">
       <div
         className="absolute inset-0 opacity-35"
         style={{
@@ -28,7 +28,7 @@ export function CanvasPreviewPanel({ template, data, customData, summaryFixtures
         }}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,205,0,0.08),transparent_42%)]" />
-      <div className="relative z-10 w-full max-w-[min(100%,620px)]">
+      <div className="relative z-10 flex w-full justify-center">
         <SocialPreview
           template={template}
           data={data}

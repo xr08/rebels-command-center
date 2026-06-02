@@ -20,6 +20,7 @@ import {
   buildPreviewSummaryCaption,
   buildResultSummaryCaption
 } from "@/lib/social/caption-builder";
+import type { SocialEditorRoute } from "@/lib/social/editor-route";
 import { normalizeStyleVariant } from "@/lib/social/style-variants";
 import { createClient } from "@/lib/supabase/client";
 import type { CustomPostType, PostStatus, Stream, StyleVariant } from "@/types/social";
@@ -38,6 +39,7 @@ import type {
 } from "@/types/social-data";
 
 type Props = {
+  route: SocialEditorRoute;
   fixtures: FixtureRecord[];
   templates: TemplateRecord[];
   mediaAssets: MediaAssetRecord[];
@@ -52,10 +54,7 @@ type Props = {
   };
 };
 
-type BuilderMode = "fixture" | "custom";
 type ComposeMode = "single" | "summary";
-type WorkflowMode = "quick" | "full";
-type ViewMode = "upcoming" | "results";
 
 const streamOptions: { label: string; value: Stream }[] = [
   { label: "All", value: "all" },
@@ -195,11 +194,12 @@ function readCustomizations(payload: SocialPostDraftPayload | null | undefined) 
   };
 }
 
-export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraft, sourceState, brand }: Props) {
-  const [builderMode, setBuilderMode] = useState<BuilderMode>("fixture");
-  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("full");
+export function SocialPostEditor({ route, fixtures, templates, mediaAssets, initialDraft, sourceState, brand }: Props) {
+  const isCustomRoute = route === "custom";
+  const isFixtureRoute = !isCustomRoute;
+  const fixtureStatus = route === "results" ? "completed" : "scheduled";
+
   const [composeMode, setComposeMode] = useState<ComposeMode>("single");
-  const [viewMode, setViewMode] = useState<ViewMode>("upcoming");
   const [stream, setStream] = useState<Stream>("all");
   const [fixtureId, setFixtureId] = useState("");
   const [roundLabel, setRoundLabel] = useState("");
@@ -228,7 +228,6 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     }
 
     if (initialDraft.custom_post_type) {
-      setBuilderMode("custom");
       setTemplateId(initialDraft.custom_post_type);
       setCustomForm((prev) => ({
         ...prev,
@@ -249,7 +248,6 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       return;
     }
 
-    setBuilderMode("fixture");
     setFixtureId(initialDraft.fixture_id ?? "");
     if (initialDraft.template_id) {
       setTemplateId(initialDraft.template_id);
@@ -261,28 +259,15 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     } else {
       setComposeMode("single");
     }
-
-    if (String(initialDraft.post_type).startsWith("result")) {
-      setViewMode("results");
-    } else {
-      setViewMode("upcoming");
-    }
   }, [initialDraft]);
-
-  useEffect(() => {
-    if (workflowMode === "quick") {
-      setComposeMode("single");
-      setCustomizations((prev) => ({ ...prev, showSponsorStrip: false }));
-    }
-  }, [workflowMode]);
 
   const filteredFixtures = useMemo(() => {
     return fixtures.filter((fixture) => {
-      const matchesStatus = viewMode === "upcoming" ? fixture.status === "scheduled" : fixture.status === "completed";
+      const matchesStatus = fixture.status === fixtureStatus;
       const matchesStream = stream === "all" || fixture.teams?.stream === stream;
       return matchesStatus && matchesStream;
     });
-  }, [fixtures, viewMode, stream]);
+  }, [fixtureStatus, fixtures, stream]);
 
   const availableRounds = useMemo(() => {
     return Array.from(new Set(filteredFixtures.map((fixture) => fixture.round_label))).sort();
@@ -301,17 +286,17 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       const isResult = String(template.post_type).startsWith("result");
       const isSummaryTemplate = String(template.post_type).endsWith("summary");
 
-      if (viewMode === "upcoming" && !isPreview) {
+      if (route === "upcoming" && !isPreview) {
         return false;
       }
-      if (viewMode === "results" && !isResult) {
+      if (route === "results" && !isResult) {
         return false;
       }
       return composeMode === "summary" ? isSummaryTemplate : !isSummaryTemplate;
     });
-  }, [templates, viewMode, composeMode]);
+  }, [composeMode, route, templates]);
 
-  const availableTemplates = builderMode === "custom" ? customTemplateOptions : fixtureTemplates;
+  const availableTemplates = isCustomRoute ? customTemplateOptions : fixtureTemplates;
 
   const imageAssets = useMemo(() => {
     return mediaAssets.filter((asset) => {
@@ -354,22 +339,22 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   }, [logoAssets]);
 
   useEffect(() => {
-    if (builderMode !== "fixture") {
+    if (!isFixtureRoute) {
       return;
     }
     if (!filteredFixtures.some((fixture) => fixture.id === fixtureId)) {
       setFixtureId(filteredFixtures[0]?.id ?? "");
     }
-  }, [builderMode, filteredFixtures, fixtureId]);
+  }, [filteredFixtures, fixtureId, isFixtureRoute]);
 
   useEffect(() => {
-    if (builderMode !== "fixture") {
+    if (!isFixtureRoute) {
       return;
     }
     if (!availableRounds.includes(roundLabel)) {
       setRoundLabel(availableRounds[0] ?? "");
     }
-  }, [builderMode, availableRounds, roundLabel]);
+  }, [availableRounds, isFixtureRoute, roundLabel]);
 
   useEffect(() => {
     if (!availableTemplates.some((template) => template.id === templateId)) {
@@ -388,12 +373,12 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const selectedFixture = filteredFixtures.find((fixture) => fixture.id === fixtureId) ?? null;
   const selectedTemplate = availableTemplates.find((template) => template.id === templateId) ?? null;
   const singleData = toTemplateData(selectedFixture);
-  const selectedBackgroundId = builderMode === "custom" ? customForm.selectedMediaId : backgroundAssetId;
+  const selectedBackgroundId = isCustomRoute ? customForm.selectedMediaId : backgroundAssetId;
   const selectedBackgroundUrl = mediaOptions.find((asset) => asset.id === selectedBackgroundId)?.publicUrl ?? null;
   const selectedLogoUrl = logoOptions.find((asset) => asset.id === customForm.selectedLogoId)?.publicUrl ?? null;
   const effectiveShowSponsorStrip = false;
 
-  const customData: CustomTemplateData | null = builderMode === "custom" && selectedTemplate
+  const customData: CustomTemplateData | null = isCustomRoute && selectedTemplate
     ? {
       ...customForm,
       postType: selectedTemplate.post_type as CustomPostType
@@ -425,7 +410,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
   const previewBrand = {
     ...brand,
-    logoPath: builderMode === "custom" ? selectedLogoUrl ?? brand.logoPath : brand.logoPath
+    logoPath: isCustomRoute ? selectedLogoUrl ?? brand.logoPath : brand.logoPath
   };
 
   const generateCaption = () => {
@@ -433,7 +418,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       return;
     }
 
-    if (builderMode === "custom") {
+    if (isCustomRoute) {
       const captionText = buildCustomCaption(
         selectedTemplate.post_type as CustomPostType,
         customForm,
@@ -493,7 +478,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           options: exportOptions,
           brand: previewBrand,
           data: singleData,
-          summaryFixtures: builderMode === "fixture" ? summaryFixtures : []
+          summaryFixtures: isFixtureRoute ? summaryFixtures : []
         });
       } else {
         if (!exportRef.current) {
@@ -521,7 +506,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         });
       }
 
-      const fileLabel = builderMode === "custom"
+      const fileLabel = isCustomRoute
         ? (selectedTemplate.name || "custom-post")
         : composeMode === "summary"
           ? roundLabel || "round"
@@ -547,7 +532,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
 
     let payload: Record<string, unknown>;
 
-    if (builderMode === "custom") {
+    if (isCustomRoute) {
       const captionToSave = caption || buildCustomCaption(selectedTemplate.post_type as CustomPostType, customForm, brand.clubName);
       payload = {
         club_id: brand.clubId,
@@ -607,20 +592,15 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
   const controls = (
     <div className="space-y-5">
       <ModeTabs
-        builderMode={builderMode}
-        setBuilderMode={setBuilderMode}
-        workflowMode={workflowMode}
-        setWorkflowMode={setWorkflowMode}
+        route={route}
         composeMode={composeMode}
         setComposeMode={setComposeMode}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
         stream={stream}
         setStream={setStream}
         streamOptions={streamOptions}
       />
 
-      {builderMode === "fixture" ? (
+      {isFixtureRoute ? (
         <FixturePicker
           composeMode={composeMode}
           filteredFixtures={filteredFixtures}
@@ -658,13 +638,13 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
       <MediaPicker
         mediaOptions={mediaOptions}
         selectedBackgroundId={selectedBackgroundId}
-        onSelectBackground={(id) => builderMode === "custom"
+        onSelectBackground={(id) => isCustomRoute
           ? setCustomForm((prev) => ({ ...prev, selectedMediaId: id }))
           : setBackgroundAssetId(id)}
         logoOptions={logoOptions}
         selectedLogoId={customForm.selectedLogoId}
         onSelectLogo={(id) => setCustomForm((prev) => ({ ...prev, selectedLogoId: id }))}
-        showLogoPicker={builderMode === "custom"}
+        showLogoPicker={isCustomRoute}
       />
       <TemplateCustomizer
         value={customizations}
@@ -682,7 +662,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
         template={selectedTemplate}
         data={singleData}
         customData={customData}
-        summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+        summaryFixtures={isFixtureRoute ? summaryFixtures : []}
         options={previewOptions}
         brand={previewBrand}
       />
@@ -694,7 +674,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
     <CaptionPanel
       caption={caption}
       setCaption={setCaption}
-      rows={workflowMode === "quick" ? 4 : 6}
+      rows={6}
       message={message}
       onGenerate={generateCaption}
       onCopy={copyCaption}
@@ -718,7 +698,7 @@ export function SocialPostEditor({ fixtures, templates, mediaAssets, initialDraf
           template={selectedTemplate}
           data={singleData}
           customData={customData}
-          summaryFixtures={builderMode === "fixture" ? summaryFixtures : []}
+          summaryFixtures={isFixtureRoute ? summaryFixtures : []}
           options={exportOptions}
           brand={previewBrand}
         />

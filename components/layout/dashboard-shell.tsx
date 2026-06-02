@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/social", label: "Social" },
+  { href: "/social/upcoming", label: "Social Posts" },
   { href: "/templates", label: "Templates" },
   { href: "/media", label: "Media" },
   { href: "/history", label: "History" }
@@ -12,10 +12,12 @@ const navItems = [
 export function DashboardShell({
   title,
   subtitle,
+  headerSlot,
   children
 }: {
   title: string;
   subtitle?: string;
+  headerSlot?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -61,6 +63,7 @@ export function DashboardShell({
           <div className="glass-panel rounded-2xl p-5">
             <h2 className="text-2xl font-bold">{title}</h2>
             {subtitle ? <p className="mt-2 text-sm text-command-muted">{subtitle}</p> : null}
+            {headerSlot}
           </div>
           {children}
         </section>

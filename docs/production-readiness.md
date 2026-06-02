@@ -28,15 +28,17 @@ Required schema/migrations:
 
 ## Smoke Test Checklist (Post Deploy)
 
-1. Open `/social` and confirm fixtures load for Upcoming and Results.
-2. Generate single preview/result post, then:
+1. Open `/social/upcoming` and confirm scheduled fixtures load.
+2. Open `/social/results` and confirm completed fixtures load.
+3. Open `/social/custom` and confirm custom templates load.
+4. Generate single preview/result post, then:
    - generate caption
    - copy caption
    - export PNG (square and portrait)
-3. Generate round summary preview/result, then export PNG.
-4. Save draft and posted entries, then verify in `/history`.
-5. Open `/history` and reuse a draft via `Open Draft/Reuse`.
-6. Upload a media asset on `/media`, confirm thumbnail appears and can be selected as background.
+5. Generate round summary preview/result, then export PNG.
+6. Save draft and posted entries, then verify in `/history`.
+7. Open `/history` and reuse a draft via `Open Draft/Reuse`.
+8. Upload a media asset on `/media`, confirm thumbnail appears and can be selected as background.
 
 ## Backup and Export Plan
 
